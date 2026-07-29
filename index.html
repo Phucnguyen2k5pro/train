@@ -2,34 +2,70 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mô phỏng Tàu hỏa Bạch Kim - 400 Ngàn Tỷ Toa</title>
     <style>
         :root { --bg-color: #121212; --text-color: #e0e0e0; --accent: #ff69b4; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: relative; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; padding: 0; 
+            width: 100vw; height: 100vh; 
+            overflow: hidden; position: relative; 
+            touch-action: none; /* Prevent pull-to-refresh on mobile */
+            -webkit-user-select: none; user-select: none;
+        }
         .train-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; cursor: grab; z-index: 1; }
         .train-wrapper:active { cursor: grabbing; }
-        .ui-panel { position: absolute; top: 0; left: 0; width: 100%; max-height: 30vh; background: linear-gradient(to bottom, rgba(15,15,20,0.95) 0%, rgba(20,20,25,0.6) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding: 10px 20px; box-sizing: border-box; z-index: 100; display: flex; flex-direction: column; gap: 12px; opacity: 0.4; transition: opacity 0.3s ease; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        
+        .ui-panel { position: absolute; top: 0; left: 0; width: 100%; max-height: 35vh; background: linear-gradient(to bottom, rgba(15,15,20,0.95) 0%, rgba(20,20,25,0.6) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding: 10px 20px; box-sizing: border-box; z-index: 100; display: flex; flex-direction: column; gap: 12px; opacity: 0.4; transition: opacity 0.3s ease; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         .ui-panel:hover, .ui-panel:focus-within { opacity: 1; }
+        
         .panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .panel-header h1 { font-size: 16px; margin: 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); letter-spacing: 0.5px; white-space: nowrap; }
         .subtitle { font-size: 12px; color: #f1c40f; font-weight: normal; margin-left: 8px; }
+        
         .stats-grid { display: flex; gap: 15px; font-size: 13px; color: #ddd; background: rgba(0,0,0,0.4); padding: 6px 15px; border-radius: 8px; flex-wrap: wrap; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
         .stat-value { font-family: monospace; font-size: 14px; color: var(--accent); font-weight: bold; }
-        .panel-controls { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; width: 100%; }
+        
+        .panel-controls { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; width: 100%; }
         .left-tools { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.3); padding: 6px 15px; border-radius: 8px; }
         .time-warp { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #fff; font-weight: bold; width: 170px; }
-        .time-warp input { flex: 1; height: 5px; cursor: pointer; }
+        .time-warp input { flex: 1; height: 10px; cursor: pointer; }
+        
         .button-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; flex: 1; }
-        .button-container > button { flex: 0 0 calc(16.666% - 8px); max-width: 160px; padding: 8px 4px; border-radius: 5px; border: none; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .button-container > button { flex: 0 0 calc(16.666% - 8px); max-width: 160px; padding: 10px 4px; border-radius: 5px; border: none; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; touch-action: manipulation; }
         .button-container > button:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
         .button-container > button:active { transform: translateY(1px) scale(0.96); box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
         .button-container > button:disabled { opacity: 0.5; cursor: not-allowed; background: #444 !important; color: #888 !important; }
+        
         .start { background: #4CAF50; } .pause { background: #FF9800; } .reset { background: #f44336; } .horn { background: #9b59b6; } .buy-loco { background: #3498db; } .buy-max { background: #e67e22; } .weather { background: #00bcd4; }
         .cam-active { background: var(--accent) !important; box-shadow: 0 0 8px var(--accent) !important; } .cam-inactive { background: #333 !important; }
-        .custom-scrollbar { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85); padding: 10px 15px; box-sizing: border-box; z-index: 20; display: flex; align-items: center; gap: 15px; color: #fff; font-size: 12px; font-weight: bold; font-family: system-ui; border-top: 1px solid rgba(255,255,255,0.1); }
-        .custom-scrollbar input { flex: 1; cursor: pointer; height: 6px; }
-        @media (max-width: 1150px) { .panel-header, .panel-controls { flex-direction: column; align-items: stretch; } .left-tools { justify-content: center; } .button-container > button { flex: 0 0 calc(33.333% - 8px); max-width: none; } }
+        
+        .custom-scrollbar { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85); padding: 12px 15px; box-sizing: border-box; z-index: 20; display: flex; align-items: center; gap: 15px; color: #fff; font-size: 12px; font-weight: bold; font-family: system-ui; border-top: 1px solid rgba(255,255,255,0.1); }
+        .custom-scrollbar input { flex: 1; cursor: pointer; height: 12px; }
+
+        /* Responsive Breakpoints for Tablets & Mobile */
+        @media (max-width: 1150px) { 
+            .panel-header, .panel-controls { flex-direction: column; align-items: stretch; } 
+            .left-tools { justify-content: center; width: 100%; } 
+            .button-container > button { flex: 0 0 calc(33.333% - 8px); max-width: none; } 
+        }
+        @media (max-width: 768px) {
+            .ui-panel { max-height: 45vh; padding: 10px; opacity: 0.8; /* Keep slightly visible on mobile */ }
+            .panel-header h1 { font-size: 14px; white-space: normal; text-align: center; line-height: 1.4; }
+            .subtitle { display: block; margin-top: 4px; margin-left: 0; font-size: 11px; }
+            .stats-grid { justify-content: center; font-size: 11px; padding: 8px; gap: 10px; }
+            .stat-value { font-size: 12px; }
+            .button-container > button { font-size: 11px; padding: 12px 4px; /* Larger touch target */ }
+            .custom-scrollbar { font-size: 10px; padding: 10px; }
+        }
+        @media (max-width: 480px) {
+            .button-container > button { flex: 0 0 calc(50% - 8px); }
+            .time-warp { width: 100%; justify-content: center; }
+            .left-tools { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
@@ -83,7 +119,6 @@
     </div>
 
 <script>
-// --- CORE CONSTANTS ---
 const QTY = 100000000000000; // 100 Tỷ Tỷ (100 Trillion)
 const CAR_TYPES = 4; // Logistics, Tech, Energy, Metals
 const TENDER_CARS = 1;
@@ -94,9 +129,8 @@ const CAR_WIDTH = 3000;
 const LOCO_TOP_Y = -325; 
 const WHEEL_RADIUS = 16;
 const DAY_IN_SECONDS = 86400;
-const BASE_GROWTH_RATE = 0.1; // 18% Tăng trưởng
+const BASE_GROWTH_RATE = 0.18; 
 
-// --- DATABASES (100 per category) ---
 const logisticsBrands = [
     { name: "MSC", bg: "#ffcc00", text: "#000000" }, { name: "Maersk", bg: "#7ca9bc", text: "#ffffff" }, { name: "CMA CGM", bg: "#002366", text: "#ffffff" }, { name: "COSCO", bg: "#002a94", text: "#ffffff" }, { name: "Hapag-Lloyd", bg: "#ff3300", text: "#ffffff" }, { name: "ONE", bg: "#ff007f", text: "#ffffff" }, { name: "Evergreen", bg: "#006400", text: "#ffffff" }, { name: "HMM", bg: "#111111", text: "#ff0000" }, { name: "Yang Ming", bg: "#cccccc", text: "#ff0000" }, { name: "ZIM", bg: "#00a3e0", text: "#ffffff" },
     { name: "Wan Hai", bg: "#003399", text: "#ffffff" }, { name: "PIL", bg: "#cc0000", text: "#ffffff" }, { name: "SITC", bg: "#0055a5", text: "#ffffff" }, { name: "KMTC", bg: "#003399", text: "#ffffff" }, { name: "X-Press Feeders", bg: "#111", text: "#0055a5" }, { name: "Unifeeder", bg: "#f1c40f", text: "#000" }, { name: "TS Lines", bg: "#e65100", text: "#ffffff" }, { name: "Arkas Line", bg: "#002a94", text: "#ffffff" }, { name: "Sinokor", bg: "#003399", text: "#ffffff" }, { name: "RCL", bg: "#0054a4", text: "#ffffff" },
@@ -152,7 +186,6 @@ const metalBrands = [
 let state = JSON.parse(localStorage.getItem("trainSave")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
 const save = () => localStorage.setItem("trainSave", JSON.stringify(state));
 
-// Ensure initialization
 if (state.realDistanceKm === undefined) state.realDistanceKm = 0; if (state.spentDistanceKm === undefined) state.spentDistanceKm = 0; if (state.locomotives === undefined) state.locomotives = 1; if (state.boughtGrowth === undefined) state.boughtGrowth = 0; if (state.lastEvenMilestone === undefined) state.lastEvenMilestone = 0; if (state.lastJoint === undefined) state.lastJoint = 0; if (state.totalRotation === undefined) state.totalRotation = 0; if (state.lastChugStep === undefined) state.lastChugStep = 0;
 if (state.currentRPM === undefined) state.currentRPM = Math.pow(1 + BASE_GROWTH_RATE, state.elapsedSeconds / DAY_IN_SECONDS);
 if (state.growthRate === undefined) state.growthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01) + (state.lastEvenMilestone * 0.001);
@@ -282,35 +315,19 @@ function drawTender(ctx, width) {
 
 function drawGenericPlatinumContainer(ctx, width, idx, brandArray, titleStr) {
     let w = width - 20; let y = -35;
-    
-    // Gầm toa
-    ctx.fillStyle = "#1a252f"; 
-    ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
-    
-    // Vạch vàng/đen an toàn trên gầm
-    ctx.save(); ctx.beginPath(); ctx.rect(10, y, w, 20); ctx.clip();
-    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 6;
-    for(let sx = -20; sx < w + 20; sx += 30) { ctx.beginPath(); ctx.moveTo(10 + sx, y); ctx.lineTo(10 + sx - 20, y + 20); ctx.stroke(); }
-    ctx.restore();
+    ctx.fillStyle = "#1a252f"; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
+    ctx.save(); ctx.beginPath(); ctx.rect(10, y, w, 20); ctx.clip(); ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 6;
+    for(let sx = -20; sx < w + 20; sx += 30) { ctx.beginPath(); ctx.moveTo(10 + sx, y); ctx.lineTo(10 + sx - 20, y + 20); ctx.stroke(); } ctx.restore();
 
-    // Container khối Platinum
-    const CONT_HEIGHT_LOCAL = 270; const cy = y - CONT_HEIGHT_LOCAL; 
-    let brand = brandArray[idx % brandArray.length];
-
+    const CONT_HEIGHT_LOCAL = 270; const cy = y - CONT_HEIGHT_LOCAL; let brand = brandArray[idx % brandArray.length];
     let platGrad = ctx.createLinearGradient(0, cy, 0, cy + CONT_HEIGHT_LOCAL);
     platGrad.addColorStop(0, "#e5e4e2"); platGrad.addColorStop(0.3, "#ffffff"); platGrad.addColorStop(0.5, "#d3d3d3"); platGrad.addColorStop(0.8, "#f8f9fa"); platGrad.addColorStop(1, "#b0c4de");
+    ctx.fillStyle = platGrad; ctx.fillRect(10, cy, w, CONT_HEIGHT_LOCAL);
     
-    ctx.fillStyle = platGrad;
-    ctx.fillRect(10, cy, w, CONT_HEIGHT_LOCAL);
-    
-    // Vân dọc (Corrugation)
     ctx.strokeStyle = "rgba(0,0,0,0.15)"; ctx.lineWidth = 4;
     for(let px = 30; px < w; px += 80) { ctx.beginPath(); ctx.moveTo(10 + px, cy); ctx.lineTo(10 + px, cy + CONT_HEIGHT_LOCAL); ctx.stroke(); }
 
-    // Bản Logo cực lớn ở Trung Tâm
-    let logoW = 2000; let logoH = 180;
-    let logoX = 10 + w / 2 - logoW / 2; let logoY = cy + CONT_HEIGHT_LOCAL / 2 - logoH / 2 - 10;
-
+    let logoW = 2000; let logoH = 180; let logoX = 10 + w / 2 - logoW / 2; let logoY = cy + CONT_HEIGHT_LOCAL / 2 - logoH / 2 - 10;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(logoX + 8, logoY + 8, logoW, logoH, 20); ctx.fill(); }
     ctx.fillStyle = brand.bg; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(logoX, logoY, logoW, logoH, 20); ctx.fill(); } else { ctx.fillRect(logoX, logoY, logoW, logoH); }
     ctx.strokeStyle = "#e5e4e2"; ctx.lineWidth = 10; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(logoX, logoY, logoW, logoH, 20); ctx.stroke(); }
@@ -318,17 +335,12 @@ function drawGenericPlatinumContainer(ctx, width, idx, brandArray, titleStr) {
     ctx.fillStyle = brand.text; ctx.font = "900 90px Arial Black, Impact, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(brand.name.toUpperCase(), logoX + logoW / 2, logoY + logoH / 2 + 5);
 
-    // Thông tin Container Platinum
     ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(10 + w - 450, cy + 20, 430, 45);
     ctx.fillStyle = "#f1c40f"; ctx.font = "bold 22px monospace"; ctx.textAlign = "right"; ctx.textBaseline = "top";
     ctx.fillText("SOLID PLATINUM HEAVY CARGO", 10 + w - 30, cy + 30);
 
-    // Chốt khóa gù cam (Twist-locks)
-    ctx.fillStyle = "#d35400";
-    ctx.fillRect(10, cy - 8, 30, 16); ctx.fillRect(10 + w - 30, cy - 8, 30, 16);
-    ctx.fillRect(10, y - 8, 30, 16); ctx.fillRect(10 + w - 30, y - 8, 30, 16);
+    ctx.fillStyle = "#d35400"; ctx.fillRect(10, cy - 8, 30, 16); ctx.fillRect(10 + w - 30, cy - 8, 30, 16); ctx.fillRect(10, y - 8, 30, 16); ctx.fillRect(10 + w - 30, y - 8, 30, 16);
 
-    // Nhãn Toa (Dưới cùng)
     ctx.beginPath(); ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
     if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
     ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -337,28 +349,18 @@ function drawGenericPlatinumContainer(ctx, width, idx, brandArray, titleStr) {
 
 function drawCar(x, y, index) {
     ctx.save(); ctx.translate(x, y); 
-    
-    // Draw wheels universally
     ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, -15, CAR_WIDTH - 10, 15);
     drawTruckWheel(150, 0, state.wheelAngle); drawTruckWheel(250, 0, state.wheelAngle); drawTruckWheel(350, 0, state.wheelAngle); drawTruckWheel(450, 0, state.wheelAngle);
     drawTruckWheel(CAR_WIDTH - 450, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 350, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 250, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 150, 0, state.wheelAngle);
     
-    // Massive Routing Logic
-    if (index === 0) {
-        drawTender(ctx, CAR_WIDTH);
-    } else {
+    if (index === 0) { drawTender(ctx, CAR_WIDTH); } 
+    else {
         let logicalIndex = index - 1; 
-        if (logicalIndex < QTY) {
-            drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex, logisticsBrands, "LOGISTICS");
-        } else if (logicalIndex < QTY * 2) {
-            drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - QTY, techBrands, "TECH GIANTS");
-        } else if (logicalIndex < QTY * 3) {
-            drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY * 2), energyBrands, "ENERGY");
-        } else {
-            drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY * 3), metalBrands, "PRECIOUS METALS & MINING");
-        }
+        if (logicalIndex < QTY) { drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex, logisticsBrands, "LOGISTICS"); } 
+        else if (logicalIndex < QTY * 2) { drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - QTY, techBrands, "TECH GIANTS"); } 
+        else if (logicalIndex < QTY * 3) { drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY * 2), energyBrands, "ENERGY"); } 
+        else { drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY * 3), metalBrands, "PRECIOUS METALS & MINING"); }
     }
-
     ctx.fillStyle = "#7f8c8d"; ctx.fillRect(CAR_WIDTH - 15, -12, 15, 6); ctx.restore();
 }
 
@@ -410,7 +412,7 @@ function updateUI() {
     const availableDist = state.realDistanceKm - state.spentDistanceKm; let currentCost = 1000 * Math.pow(1000, state.boughtGrowth);
     let maxAffordable = 0; let tempDist = availableDist; let tempCostForMax = currentCost;
     while (tempDist >= tempCostForMax && isFinite(tempCostForMax) && maxAffordable < 100) { maxAffordable++; tempDist -= tempCostForMax; tempCostForMax *= 1000; }
-    if (maxAffordable > 0) { buyGrowthBtn.disabled = false; buyMaxBtn.disabled = false; buyGrowthBtn.textContent = `🌱 +1% T.Trưởng (-${formatCost(currentCost)}km)`; buyMaxBtn.textContent = `MAX (+${maxAffordable}%)`; } 
+    if (maxAffordable > 0) { buyGrowthBtn.disabled = false; buyMaxBtn.disabled = false; buyGrowthBtn.textContent = `🌱 +1% (-${formatCost(currentCost)}km)`; buyMaxBtn.textContent = `MAX (+${maxAffordable}%)`; } 
     else { buyGrowthBtn.disabled = true; buyMaxBtn.disabled = true; buyGrowthBtn.textContent = `🌱 Thiếu ${formatCost(currentCost - availableDist)}km`; buyMaxBtn.textContent = `MAX T.Trưởng`; }
     drawGauge(currentRPM);
 }
@@ -424,76 +426,41 @@ function formatCost(num) {
 function renderTrainViewport(realDt) {
     const viewWidth = tCanvas.width; const viewHeight = tCanvas.height; ctx.clearRect(0, 0, viewWidth, viewHeight);
     
-    let isNight = false;
-    let darkness = 0;
-
+    let isNight = false; let darkness = 0;
     if (!isRaining) {
-        const simulatedTimeOfDay = (state.elapsedSeconds + realTimeOffset) % DAY_IN_SECONDS; 
-        const cycle = simulatedTimeOfDay / DAY_IN_SECONDS; 
+        const simulatedTimeOfDay = (state.elapsedSeconds + realTimeOffset) % DAY_IN_SECONDS; const cycle = simulatedTimeOfDay / DAY_IN_SECONDS; 
         darkness = Math.max(0, Math.min(1, Math.cos(cycle * Math.PI * 2) * 1.5));
-        
-        const skyR = Math.floor(135 * (1 - darkness) + 5 * darkness); 
-        const skyG = Math.floor(206 * (1 - darkness) + 10 * darkness); 
-        const skyB = Math.floor(235 * (1 - darkness) + 25 * darkness);
+        const skyR = Math.floor(135 * (1 - darkness) + 5 * darkness); const skyG = Math.floor(206 * (1 - darkness) + 10 * darkness); const skyB = Math.floor(235 * (1 - darkness) + 25 * darkness);
         ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`; ctx.fillRect(0, 0, viewWidth, viewHeight);
-        
-        if (darkness > 0) { 
-            isNight = true;
-            ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; 
-            for (let i = 0; i < stars.length; i++) { ctx.fillRect(stars[i].x * viewWidth, stars[i].y * (viewHeight/2), stars[i].r * 2, stars[i].r * 2); } 
-        }
-        
+        if (darkness > 0) { isNight = true; ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; for (let i = 0; i < stars.length; i++) { ctx.fillRect(stars[i].x * viewWidth, stars[i].y * (viewHeight/2), stars[i].r * 2, stars[i].r * 2); } }
         const sunAngle = (0.75 - cycle) * Math.PI * 2 + Math.PI; const moonAngle = sunAngle + Math.PI;
         const orbitRadius = viewWidth / 2 + 100; const orbitCx = viewWidth / 2; const orbitCy = viewHeight / 2 + 20;
         const sunX = orbitCx + Math.cos(sunAngle) * orbitRadius; const sunY = orbitCy + Math.sin(sunAngle) * orbitRadius;
         const moonX = orbitCx + Math.cos(moonAngle) * orbitRadius; const moonY = orbitCy + Math.sin(moonAngle) * orbitRadius;
-
         if (sunY < viewHeight / 2 + 100) { let sunGrad = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 60); sunGrad.addColorStop(0, "rgba(255, 215, 0, 1)"); sunGrad.addColorStop(0.3, "rgba(255, 215, 0, 0.5)"); sunGrad.addColorStop(1, "rgba(255, 215, 0, 0)"); ctx.fillStyle = sunGrad; ctx.beginPath(); ctx.arc(sunX, sunY, 60, 0, Math.PI * 2); ctx.fill(); }
         if (moonY < viewHeight / 2 + 100) { let moonGrad = ctx.createRadialGradient(moonX, moonY, 15, moonX, moonY, 50); moonGrad.addColorStop(0, `rgba(244, 246, 240, 1)`); moonGrad.addColorStop(0.5, `rgba(244, 246, 240, ${darkness * 0.8})`); moonGrad.addColorStop(1, `rgba(244, 246, 240, 0)`); ctx.fillStyle = moonGrad; ctx.beginPath(); ctx.arc(moonX, moonY, 50, 0, Math.PI * 2); ctx.fill(); }
-    } else {
-        ctx.fillStyle = `#4f5b66`; ctx.fillRect(0, 0, viewWidth, viewHeight);
-        darkness = 0.6; // Đủ tối để bật đèn nhưng không có sao
-    }
+    } else { ctx.fillStyle = `#4f5b66`; ctx.fillRect(0, 0, viewWidth, viewHeight); darkness = 0.6; }
 
     if (cameraMode === 4) { 
         ctx.fillStyle = "#81C784"; ctx.fillRect(0, viewHeight/2 - 20, viewWidth, viewHeight/2 + 20); ctx.fillStyle = "#78909c"; ctx.beginPath(); ctx.moveTo(viewWidth/2 - 30, viewHeight/2 - 20); ctx.lineTo(viewWidth/2 + 30, viewHeight/2 - 20); ctx.lineTo(viewWidth, viewHeight); ctx.lineTo(0, viewHeight); ctx.fill(); ctx.fillStyle = "#1a252f"; ctx.fillRect(0, viewHeight - 140, viewWidth, 140); ctx.fillStyle = '#0ff'; ctx.font = 'bold 20px monospace'; ctx.fillText('SPEED: ' + currentSpeedKmh.toExponential(2) + ' KM/H', 50, viewHeight - 80); if (isRaining && realDt) drawRainEffect(ctx, viewWidth, viewHeight, realDt); return;
     }
 
     let zoom = cameraMode === 3 ? 0.25 : 0.75; ctx.save(); ctx.scale(zoom, zoom);
-    const scaledWidth = viewWidth / zoom; const scaledHeight = viewHeight / zoom;
-    const groundY = scaledHeight - 85; const lowerGroundY = scaledHeight - 15; 
-    let safeDist = isFinite(state.distanceTraveled) ? state.distanceTraveled : 0; 
+    const scaledWidth = viewWidth / zoom; const scaledHeight = viewHeight / zoom; const groundY = scaledHeight - 85; const lowerGroundY = scaledHeight - 15; let safeDist = isFinite(state.distanceTraveled) ? state.distanceTraveled : 0; 
     
     if (cameraMode === 1 || cameraMode === 4) { camTcsCar = -state.locomotives; camTcsPixel = 0; } 
     else if (cameraMode === 2) { camTcsCar = virtualCameraCar; camTcsPixel = virtualCameraPixel; } 
     else if (cameraMode === 3) { camTcsCar = droneCar; camTcsPixel = dronePixel; } 
-    else if (cameraMode === 5) {
-        let distDiff = safeDist - capturedSafeDist; let distDiffCars = Math.floor(distDiff / CAR_WIDTH); let distDiffPixels = distDiff - (distDiffCars * CAR_WIDTH);
-        camTcsCar = capturedTcsCar + distDiffCars; camTcsPixel = capturedTcsPixel + distDiffPixels;
-        while (camTcsPixel >= CAR_WIDTH) { camTcsCar++; camTcsPixel -= CAR_WIDTH; } while (camTcsPixel < 0) { camTcsCar--; camTcsPixel += CAR_WIDTH; }
-    }
+    else if (cameraMode === 5) { let distDiff = safeDist - capturedSafeDist; let distDiffCars = Math.floor(distDiff / CAR_WIDTH); let distDiffPixels = distDiff - (distDiffCars * CAR_WIDTH); camTcsCar = capturedTcsCar + distDiffCars; camTcsPixel = capturedTcsPixel + distDiffPixels; while (camTcsPixel >= CAR_WIDTH) { camTcsCar++; camTcsPixel -= CAR_WIDTH; } while (camTcsPixel < 0) { camTcsCar--; camTcsPixel += CAR_WIDTH; } }
     
-    drawSideEnvironment(safeDist, groundY, lowerGroundY, scaledWidth, scaledHeight); 
-    drawViaductBridge(safeDist, groundY, scaledWidth, scaledHeight);
-
+    drawSideEnvironment(safeDist, groundY, lowerGroundY, scaledWidth, scaledHeight); drawViaductBridge(safeDist, groundY, scaledWidth, scaledHeight);
     function getScreenX(targetCar, targetPixel) { let carDiff = targetCar - camTcsCar; return trainStartX + (carDiff * CAR_WIDTH) + (targetPixel - camTcsPixel); }
     
-    for (let l = 0; l < state.locomotives; l++) { 
-        const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); 
-        if (locoScreenX + LOCO_WIDTH > -200 && locoScreenX < scaledWidth + 200) drawLocomotive(locoScreenX, groundY); 
-    }
+    for (let l = 0; l < state.locomotives; l++) { const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); if (locoScreenX + LOCO_WIDTH > -200 && locoScreenX < scaledWidth + 200) drawLocomotive(locoScreenX, groundY); }
 
-    let offset = trainStartX - camTcsPixel;
-    let minCarDiff = Math.floor((-CAR_WIDTH - offset) / CAR_WIDTH);
-    let maxCarDiff = Math.ceil((scaledWidth - offset) / CAR_WIDTH);
-    
-    let startIdx = Math.max(0, camTcsCar + minCarDiff);
-    let endIdx = Math.min(TOTAL_CARS - 1, camTcsCar + maxCarDiff);
-
-    for (let i = startIdx; i <= endIdx; i++) { 
-        let carScreenX = getScreenX(i, 0); 
-        drawCar(carScreenX, groundY, i); 
-    }
+    let offset = trainStartX - camTcsPixel; let minCarDiff = Math.floor((-CAR_WIDTH - offset) / CAR_WIDTH); let maxCarDiff = Math.ceil((scaledWidth - offset) / CAR_WIDTH);
+    let startIdx = Math.max(0, camTcsCar + minCarDiff); let endIdx = Math.min(TOTAL_CARS - 1, camTcsCar + maxCarDiff);
+    for (let i = startIdx; i <= endIdx; i++) { let carScreenX = getScreenX(i, 0); drawCar(carScreenX, groundY, i); }
     
     let rearLocoScreenX = getScreenX(TOTAL_CARS, 0);
     if (rearLocoScreenX + LOCO_WIDTH > -200 && rearLocoScreenX < scaledWidth + 200) drawRearLocomotive(rearLocoScreenX, groundY);
@@ -501,34 +468,24 @@ function renderTrainViewport(realDt) {
     if (isRaining) {
         let waterLevel = groundY + 5; let effectiveSpeed = Math.min(300, currentSpeedKmh);
         if (effectiveSpeed > 10) {
-            let trainStartScreen = getScreenX(0, -state.locomotives * LOCO_WIDTH); 
-            let trainEndScreen = rearLocoScreenX + LOCO_WIDTH; 
-            let splashStartX = Math.max(0, trainStartScreen); 
-            let splashEndX = Math.min(scaledWidth, trainEndScreen);
+            let trainStartScreen = getScreenX(0, -state.locomotives * LOCO_WIDTH); let trainEndScreen = rearLocoScreenX + LOCO_WIDTH; 
+            let splashStartX = Math.max(0, trainStartScreen); let splashEndX = Math.min(scaledWidth, trainEndScreen);
             if (splashStartX < scaledWidth && splashEndX > 0) {
                 ctx.fillStyle = "rgba(220, 240, 255, 0.5)"; for (let x = splashStartX; x <= splashEndX; x += 30) { let foamH = 2 + Math.random() * Math.min(10, effectiveSpeed/10); ctx.fillRect(x, waterLevel - foamH, 25, foamH); }
-                if (trainStartScreen >= -200 && trainStartScreen <= scaledWidth + 200) {
-                    let splashSize = Math.min(100, effectiveSpeed * 0.8); ctx.fillStyle = "rgba(220, 240, 255, 0.6)"; ctx.beginPath(); ctx.moveTo(trainStartScreen + 100, waterLevel); ctx.quadraticCurveTo(trainStartScreen - splashSize * 0.5, waterLevel - splashSize * 0.8, trainStartScreen - splashSize * 1.5, waterLevel + 10); ctx.lineTo(trainStartScreen + 100, waterLevel + 10); ctx.fill();
-                    for(let p=0; p<8; p++) { ctx.beginPath(); ctx.arc(trainStartScreen - Math.random() * splashSize * 1.5, waterLevel - Math.random() * splashSize, Math.random() * 4 + 2, 0, Math.PI*2); ctx.fill(); }
-                }
+                if (trainStartScreen >= -200 && trainStartScreen <= scaledWidth + 200) { let splashSize = Math.min(100, effectiveSpeed * 0.8); ctx.fillStyle = "rgba(220, 240, 255, 0.6)"; ctx.beginPath(); ctx.moveTo(trainStartScreen + 100, waterLevel); ctx.quadraticCurveTo(trainStartScreen - splashSize * 0.5, waterLevel - splashSize * 0.8, trainStartScreen - splashSize * 1.5, waterLevel + 10); ctx.lineTo(trainStartScreen + 100, waterLevel + 10); ctx.fill(); for(let p=0; p<8; p++) { ctx.beginPath(); ctx.arc(trainStartScreen - Math.random() * splashSize * 1.5, waterLevel - Math.random() * splashSize, Math.random() * 4 + 2, 0, Math.PI*2); ctx.fill(); } }
             }
         }
         ctx.fillStyle = `rgba(50, 75, 90, ${darkness > 0.5 ? 0.95 : 0.85})`; ctx.beginPath(); ctx.moveTo(0, scaledHeight);
-        let time = state.elapsedSeconds; let baseWaveSpeed = time * 4; 
-        let waveOffset = getParallaxOffset(-0.1, 100000, 0, safeDist); let waveH = 2 + Math.min(6, effectiveSpeed / 30);
+        let time = state.elapsedSeconds; let baseWaveSpeed = time * 4; let waveOffset = getParallaxOffset(-0.1, 100000, 0, safeDist); let waveH = 2 + Math.min(6, effectiveSpeed / 30);
         for(let x = 0; x <= scaledWidth; x += 20) { let y = waterLevel + Math.sin((x + waveOffset) * 0.05 + baseWaveSpeed) * waveH + Math.sin((x + waveOffset) * 0.02 - baseWaveSpeed * 0.5) * (waveH * 0.5); ctx.lineTo(x, y); }
         ctx.lineTo(scaledWidth, waterLevel); ctx.lineTo(scaledWidth, scaledHeight); ctx.closePath(); ctx.fill();
     }
 
     if (darkness > 0.05) {
-        for (let l = 0; l < state.locomotives; l++) { 
-            const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); 
-            drawLocomotiveLights(locoScreenX, groundY, darkness, l === 0); 
-        }
+        for (let l = 0; l < state.locomotives; l++) { const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); drawLocomotiveLights(locoScreenX, groundY, darkness, l === 0); }
         if (rearLocoScreenX + LOCO_WIDTH > -200 && rearLocoScreenX < scaledWidth + 200) drawRearLocomotiveLights(rearLocoScreenX, groundY, darkness);
     } 
-    ctx.restore(); 
-    if (isRaining && realDt) drawRainEffect(ctx, viewWidth, viewHeight, realDt);
+    ctx.restore(); if (isRaining && realDt) drawRainEffect(ctx, viewWidth, viewHeight, realDt);
 }
 
 function loop(timestamp) {
@@ -546,12 +503,8 @@ function loop(timestamp) {
         currentSpeedKmh = currentRPM / 6.3; if (!isFinite(currentSpeedKmh)) currentSpeedKmh = 1e300;
         state.realDistanceKm += currentSpeedKmh * (dt / 3600); 
         
-        let rotationDelta = (currentRPM * 2 * Math.PI / 60) * dt;
-        state.totalRotation += rotationDelta;
-        state.wheelAngle = -state.totalRotation % (Math.PI * 4);
-
-        let currentStep = Math.floor(state.totalRotation / (Math.PI * 2)); 
-        if (currentStep > state.lastChugStep) { playChug(currentSpeedKmh); state.lastChugStep = currentStep; }
+        let rotationDelta = (currentRPM * 2 * Math.PI / 60) * dt; state.totalRotation += rotationDelta; state.wheelAngle = -state.totalRotation % (Math.PI * 4);
+        let currentStep = Math.floor(state.totalRotation / (Math.PI * 2)); if (currentStep > state.lastChugStep) { playChug(currentSpeedKmh); state.lastChugStep = currentStep; }
 
         const visualSpeed = currentSpeedKmh * 15; let distDelta = visualSpeed * dt; if (!isFinite(distDelta) || distDelta > 1e12) distDelta = 1e12; state.distanceTraveled += distDelta;
 
@@ -581,11 +534,34 @@ function updateSliderFromCamera() {
 }
 
 let isDragging = false; let lastMouseX = 0;
-scrollContainer.addEventListener('mousedown', (e) => { if (e.target === trainPositionSlider) return; if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } isDragging = true; lastMouseX = e.clientX; });
+
+// Mouse Drag Events
+scrollContainer.addEventListener('mousedown', (e) => { 
+    if (e.target === trainPositionSlider || e.target.tagName.toLowerCase() === 'button' || e.target.closest('.ui-panel')) return; 
+    if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } 
+    isDragging = true; lastMouseX = e.clientX; 
+});
 window.addEventListener('mouseup', () => { isDragging = false; });
 window.addEventListener('mousemove', (e) => { 
-    if (isDragging && cameraMode === 2) { const deltaX = e.clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.clientX; } 
+    if (isDragging && cameraMode === 2) { 
+        const deltaX = e.clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.clientX; 
+    } 
 });
+
+// Mobile Touch Drag Events (Swipe to pan camera)
+scrollContainer.addEventListener('touchstart', (e) => { 
+    if (e.target === trainPositionSlider || e.target.tagName.toLowerCase() === 'button' || e.target.closest('.ui-panel')) return; 
+    if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } 
+    isDragging = true; lastMouseX = e.touches[0].clientX; 
+}, {passive: true});
+window.addEventListener('touchend', () => { isDragging = false; });
+window.addEventListener('touchmove', (e) => { 
+    if (isDragging && cameraMode === 2) { 
+        const deltaX = e.touches[0].clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.touches[0].clientX; 
+    } 
+}, {passive: true});
+
+// Scroll Wheel
 scrollContainer.addEventListener('wheel', (e) => { 
     if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } 
     virtualCameraPixel += (e.deltaY || e.deltaX) * 300; normalizeVirtualCamera(); updateSliderFromCamera(); e.preventDefault(); 
@@ -595,9 +571,7 @@ document.getElementById('startBtn').onclick = () => { initAudio(); if (audioCtx 
 document.getElementById('pauseBtn').onclick = () => { state.running = false; updateAudio(); save(); };
 document.getElementById('resetBtn').onclick = () => { 
     state = { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 }; 
-    currentRPM = 1; currentSpeedKmh = 1 / 6.3; 
-    virtualCameraCar = -state.locomotives; virtualCameraPixel = 0; droneCar = -state.locomotives; dronePixel = 0; 
-    trainPositionSlider.value = 0; cameraMode = 1; updateCameraButtons(); save(); 
+    currentRPM = 1; currentSpeedKmh = 1 / 6.3; virtualCameraCar = -state.locomotives; virtualCameraPixel = 0; droneCar = -state.locomotives; dronePixel = 0; trainPositionSlider.value = 0; cameraMode = 1; updateCameraButtons(); save(); 
 };
 buyGrowthBtn.onclick = () => { let cost = 1000 * Math.pow(1000, state.boughtGrowth); if (state.realDistanceKm - state.spentDistanceKm >= cost) { state.spentDistanceKm += cost; state.boughtGrowth += 1; save(); updateUI(); } };
 buyMaxBtn.onclick = () => { let cost = 1000 * Math.pow(1000, state.boughtGrowth); let availableDist = state.realDistanceKm - state.spentDistanceKm; let bought = 0; while (availableDist >= cost && isFinite(cost) && bought < 100) { state.spentDistanceKm += cost; availableDist -= cost; state.boughtGrowth += 1; bought++; cost *= 1000; } if (bought > 0) { save(); updateUI(); } };
@@ -605,8 +579,7 @@ buyMaxBtn.onclick = () => { let cost = 1000 * Math.pow(1000, state.boughtGrowth)
 trainPositionSlider.addEventListener('input', (e) => { 
     if (cameraMode !== 2) { cameraMode = 2; updateCameraButtons(); } 
     let val = parseFloat(e.target.value); let targetTotalCars = val * (state.locomotives + TOTAL_CARS);
-    virtualCameraCar = Math.floor(targetTotalCars) - state.locomotives; virtualCameraPixel = (targetTotalCars - Math.floor(targetTotalCars)) * CAR_WIDTH;
-    normalizeVirtualCamera();
+    virtualCameraCar = Math.floor(targetTotalCars) - state.locomotives; virtualCameraPixel = (targetTotalCars - Math.floor(targetTotalCars)) * CAR_WIDTH; normalizeVirtualCamera();
 });
 
 const cam1Btn = document.getElementById('cam1Btn'); const cam2Btn = document.getElementById('cam2Btn'); const cam3Btn = document.getElementById('cam3Btn'); const cam4Btn = document.getElementById('cam4Btn'); const cam5Btn = document.getElementById('cam5Btn');
@@ -619,6 +592,8 @@ cam5Btn.onclick = () => { if (cameraMode !== 5) { capturedTcsCar = camTcsCar; ca
 
 timeSlider.oninput = (e) => { timeMultiplier = Math.pow(10, parseFloat(e.target.value)); timeMultiplierText.textContent = timeMultiplier < 1000 ? timeMultiplier.toFixed(0) + "x" : (timeMultiplier/1000).toFixed(1) + "Kx"; };
 document.getElementById('weatherBtn').onclick = () => { isRaining = !isRaining; updateAudio(); };
+
+// Touch events for Horn button
 document.getElementById('hornBtn').onmousedown = playHorn; document.getElementById('hornBtn').onmouseup = stopHorn; document.getElementById('hornBtn').onmouseleave = stopHorn;
 document.getElementById('hornBtn').ontouchstart = (e) => { e.preventDefault(); playHorn(); }; document.getElementById('hornBtn').ontouchend = (e) => { e.preventDefault(); stopHorn(); };
 
