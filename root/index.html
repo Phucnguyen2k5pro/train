@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mô phỏng Tàu hỏa Bạch Kim - 84 Triệu Tỷ Toa</title>
+    <title>Mô phỏng Tàu hỏa Bạch Kim - 798 Triệu Tỷ Toa</title>
     <style>
         :root { --bg-color: #121212; --text-color: #e0e0e0; --accent: #ff69b4; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: relative; touch-action: none; }
@@ -65,14 +65,14 @@
 
     <div class="ui-panel">
         <div class="panel-header">
-            <h1>🚂 Siêu Tàu 84 Triệu Tỷ Toa (Logistics, Tech, Energy, Metals, Blank, Matson, Kỷ Yếu) <br><span class="subtitle">(Các phân khu 2 Triệu Tỷ Toa | Riêng Kỷ Yếu 72 Triệu Tỷ Toa)</span></h1>
+            <h1>🚂 Siêu Tàu 798 Triệu Tỷ Toa (Logistics, Tech, Energy, Metals, Blank, Matson, Kỷ Yếu) <br><span class="subtitle">(Các phân khu 19 Triệu Tỷ Toa | Riêng Kỷ Yếu 684 Triệu Tỷ Toa)</span></h1>
             <div class="stats-grid">
                 <div>⏱ T.Gian: <span class="stat-value" id="ui-days">0</span>d</div>
                 <div>🔄 Vòng: <span class="stat-value" id="ui-rpm">1.00</span></div>
                 <div>📈 Tốc: <span class="stat-value" id="ui-speed">0.19</span>km/h (<span class="stat-value" id="ui-speed-mph" style="color: #f39c12; font-size: 11px;">0.12</span>mph)</div>
                 <div>🌱 T.Trưởng: <span class="stat-value" id="ui-growth">18.0</span>%</div>
                 <div>📍 Q.Đường: <span class="stat-value" id="ui-distance">0.00</span>km</div>
-                <div>⚖️ T.Trọng: <span class="stat-value">12.180.000.000.000.000.000.000</span> T</div>
+                <div>⚖️ T.Trọng: <span class="stat-value">115.710.000.000.000.000.000.000</span> T</div>
             </div>
         </div>
 
@@ -111,11 +111,12 @@
     </div>
 
 <script>
-    const QTY_OTHER = 2000000000000000; // 2 Triệu Tỷ Toa (2 Quadrillion) cho mỗi loại
-    const QTY_KYYEU = 7200000000000000; // 72 Triệu Tỷ Toa (72 Quadrillion) cho Kỷ Yếu
-    const CAR_TYPES = 7; 
-    const TENDER_CARS = 1;
-    const TOTAL_CARS = TENDER_CARS + (QTY_OTHER * 6) + QTY_KYYEU; // Tổng 84 Triệu Tỷ toa
+    const QTY_OTHER_BIG = 19000000000000000n; 
+    const QTY_KYYEU_BIG = 684000000000000000n; 
+    const TENDER_CARS = 1n;
+    
+    // TỔNG SỐ TOA: 798 Triệu Tỷ Toa
+    const TOTAL_CARS_BIG = TENDER_CARS + (QTY_OTHER_BIG * 6n) + QTY_KYYEU_BIG; 
 
     const LOCO_WIDTH = 3000; 
     const CAR_WIDTH = 3000; 
@@ -123,6 +124,10 @@
     const WHEEL_RADIUS = 16;
     const DAY_IN_SECONDS = 86400;
     const BASE_GROWTH_RATE = 0.18; 
+
+    function formatBigInt(bigIntNum) {
+        return bigIntNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
 
     let kyYeuImages169 = []; 
     const defaultImageUrl = 'https://placehold.co/1920x1080/e91e63/ffffff?text=Tải+Ảnh+Của+Bạn+Vào+Đây';
@@ -195,15 +200,29 @@
         { name: "Shandong", bg: "#cc0000", text: "#ffcc00" }, { name: "China Gold", bg: "#cc0000", text: "#ffd700" }, { name: "Zhongjin", bg: "#111111", text: "#ffcc00" }, { name: "Hunan Gold", bg: "#1a1a1a", text: "#f1c40f" }, { name: "Chifeng", bg: "#222222", text: "#e5c158" }, { name: "Sumitomo", bg: "#000000", text: "#c0c0c0" }, { name: "Mitsubishi", bg: "#2c3e50", text: "#c0c0c0" }, { name: "Tanaka", bg: "#1e1e1e", text: "#e5e4e2" }, { name: "Heraeus", bg: "#0a0a0a", text: "#e5e4e2" }, { name: "Valcambi", bg: "#111111", text: "#f39c12" }
     ];
 
-    let state = JSON.parse(localStorage.getItem("trainSave84q_fixed")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
-    const save = () => localStorage.setItem("trainSave84q_fixed", JSON.stringify(state));
+    let state = JSON.parse(localStorage.getItem("trainSave798q_v2")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
+    const save = () => localStorage.setItem("trainSave798q_v2", JSON.stringify(state));
 
     if (state.realDistanceKm === undefined) state.realDistanceKm = 0; if (state.spentDistanceKm === undefined) state.spentDistanceKm = 0; if (state.locomotives === undefined) state.locomotives = 1; if (state.boughtGrowth === undefined) state.boughtGrowth = 0; if (state.lastEvenMilestone === undefined) state.lastEvenMilestone = 0; if (state.lastJoint === undefined) state.lastJoint = 0; if (state.totalRotation === undefined) state.totalRotation = 0; if (state.lastChugStep === undefined) state.lastChugStep = 0;
     if (state.currentRPM === undefined) state.currentRPM = Math.pow(1 + BASE_GROWTH_RATE, state.elapsedSeconds / DAY_IN_SECONDS);
-    if (state.growthRate === undefined) state.growthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01) + (state.lastEvenMilestone * 0.001);
+    
+    // Tốc độ mua tay +1% (0.01), Thưởng milestone +0.5% (0.005)
+    if (state.growthRate === undefined) state.growthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01) + (state.lastEvenMilestone * 0.005);
 
     let timeMultiplier = 1; let lastTime = null; let currentRPM = state.currentRPM; let currentSpeedKmh = currentRPM / 6.3;
-    let cameraMode = 1; let virtualCameraCar = -state.locomotives; let virtualCameraPixel = 0; let droneCar = -state.locomotives; let dronePixel = 0; let droneDirection = 1; let capturedTcsCar = 0; let capturedTcsPixel = 0; let capturedSafeDist = 0; let camTcsCar = 0; let camTcsPixel = 0;
+    let cameraMode = 1; 
+    
+    // TỌA ĐỘ VỊ TRÍ CAMERA BIGINT
+    let virtualCameraCar = -BigInt(state.locomotives); 
+    let virtualCameraPixel = 0; 
+    let droneCar = -BigInt(state.locomotives); 
+    let dronePixel = 0; 
+    let droneDirection = 1; 
+    let capturedTcsCar = 0n; 
+    let capturedTcsPixel = 0; 
+    let capturedSafeDist = 0; 
+    let camTcsCar = -BigInt(state.locomotives); 
+    let camTcsPixel = 0;
 
     let audioCtx = null; let rainSource = null; let rainFilter = null; let rainGainNode = null; let isAudioInitialized = false; let hornOscillators = []; let hornGain = null; let trackNoiseBuffer = null; let isRaining = false;
     const MAX_RAINDROPS = 800; let raindrops = []; for(let i = 0; i < MAX_RAINDROPS; i++) { raindrops.push({ x: Math.random() * 3000, y: Math.random() * 2000, length: Math.random() * 15 + 5, speedY: Math.random() * 15 + 10, z: Math.random() * 0.5 + 0.5 }); }
@@ -214,6 +233,27 @@
     
     const clockCanvas = document.getElementById('clockCanvas');
     const clockCtx = clockCanvas.getContext('2d');
+
+    function normalizeVirtualCamera() {
+        let addCars = BigInt(Math.floor(virtualCameraPixel / CAR_WIDTH));
+        if (addCars !== 0n) {
+            virtualCameraCar += addCars;
+            virtualCameraPixel -= Number(addCars) * CAR_WIDTH;
+        }
+        if (virtualCameraPixel < 0) {
+            let subCars = BigInt(Math.ceil(-virtualCameraPixel / CAR_WIDTH));
+            virtualCameraCar -= subCars;
+            virtualCameraPixel += Number(subCars) * CAR_WIDTH;
+        }
+        if (virtualCameraCar < -BigInt(state.locomotives)) {
+            virtualCameraCar = -BigInt(state.locomotives);
+            virtualCameraPixel = 0;
+        }
+        if (virtualCameraCar >= TOTAL_CARS_BIG) {
+            virtualCameraCar = TOTAL_CARS_BIG;
+            virtualCameraPixel = 0;
+        }
+    }
 
     function initAudio() {
         if (isAudioInitialized) return;
@@ -258,7 +298,7 @@
 
     function getParallaxOffset(multiplier, modulo, additionalOffset = 0, safeDist = 0) {
         let m100 = Math.round(multiplier * 100); let bigMod = BigInt(Math.round(modulo * 100));
-        let t1 = Number((BigInt(-Math.floor(camTcsCar)) * 3000n * BigInt(m100)) % bigMod) / 100; let t2 = (-camTcsPixel * multiplier) % modulo; let t3 = (safeDist * multiplier) % modulo;
+        let t1 = Number((camTcsCar * -3000n * BigInt(m100)) % bigMod) / 100; let t2 = (-camTcsPixel * multiplier) % modulo; let t3 = (safeDist * multiplier) % modulo;
         let res = (t1 + t2 + t3 + additionalOffset) % modulo; if (res < 0) res += modulo; return res;
     }
 
@@ -328,7 +368,7 @@
         ctx.fillStyle = "#c0392b"; ctx.fillRect(10, y + h/2 + 20, w, 15); ctx.fillStyle = "#fff"; ctx.font = "bold 32px monospace"; ctx.textAlign = "center"; ctx.fillText("STEAM TENDER • HEAVY COAL SUPPLY", width/2, y + h/2 - 10);
     }
 
-    function drawGenericPlatinumContainer(ctx, width, idx, brandArray, titleStr) {
+    function drawGenericPlatinumContainer(ctx, width, idxBig, brandArray, titleStr) {
         let w = width - 20; let y = -35;
         ctx.fillStyle = "#1a252f"; 
         ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
@@ -339,7 +379,9 @@
         ctx.restore();
 
         const CONT_HEIGHT_LOCAL = 270; const cy = y - CONT_HEIGHT_LOCAL; 
-        let brand = brandArray[idx % brandArray.length];
+        
+        let brandIdx = Number(idxBig % BigInt(brandArray.length));
+        let brand = brandArray[brandIdx];
 
         let platGrad = ctx.createLinearGradient(0, cy, 0, cy + CONT_HEIGHT_LOCAL);
         platGrad.addColorStop(0, "#e5e4e2"); platGrad.addColorStop(0.3, "#ffffff"); platGrad.addColorStop(0.5, "#d3d3d3"); platGrad.addColorStop(0.8, "#f8f9fa"); platGrad.addColorStop(1, "#b0c4de");
@@ -371,11 +413,13 @@
         ctx.beginPath(); ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
         if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
         ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(`500ft SOLID PLATINUM ${titleStr} (${brand.name.toUpperCase()}) • 145,000T • #${idx+1}`, width/2, y - 25);
+        
+        ctx.fillText(`500ft SOLID PLATINUM ${titleStr} (${brand.name.toUpperCase()}) • 145,000T • #${formatBigInt(idxBig + 1n)}`, width/2, y - 25);
     }
 
-    function drawKyYeuPlatinumContainer(ctx, width, idx) {
+    function drawKyYeuPlatinumContainer(ctx, width, idxBig) {
         let w = width - 20; let y = -35;
+        
         ctx.fillStyle = "#1a252f"; 
         ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
         
@@ -386,22 +430,23 @@
         ctx.fillStyle = platGrad;
         ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, cy, w, CONT_HEIGHT_LOCAL, 8); ctx.fill(); } else { ctx.fillRect(10, cy, w, CONT_HEIGHT_LOCAL); }
 
-        const numSlots = 6;
+        const numSlots = 6n;
         const slotH = CONT_HEIGHT_LOCAL - 20; 
         const slotW = slotH * (16 / 9);
-        const totalSlotW = numSlots * slotW; 
+        const totalSlotW = Number(numSlots) * slotW; 
+        
         const gapX = (w - totalSlotW) / 2; 
 
-        for (let i = 0; i < numSlots; i++) {
-            let slotX = 10 + gapX + i * slotW;
+        for (let i = 0n; i < numSlots; i++) {
+            let slotX = 10 + gapX + Number(i) * slotW;
             let startY = cy + 10;
 
             ctx.fillStyle = "#0a0a0c";
             ctx.fillRect(slotX, startY, slotW, slotH);
 
             if (kyYeuImages169 && kyYeuImages169.length > 0) {
-                let imgIdx = (idx * numSlots + i) % kyYeuImages169.length;
-                let img = kyYeuImages169[imgIdx];
+                let imgIdxBig = (idxBig * numSlots + i) % BigInt(kyYeuImages169.length);
+                let img = kyYeuImages169[Number(imgIdxBig)];
 
                 if (img && img.complete && img.naturalWidth > 0) {
                     const imgAspect = img.naturalWidth / img.naturalHeight;
@@ -439,36 +484,36 @@
         ctx.beginPath(); ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
         if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
         ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(`500ft SOLID PLATINUM MEMORY CAR (16:9 NO CROP) • 145,000T • #${idx+1}`, width/2, y - 25);
+        ctx.fillText(`500ft SOLID PLATINUM MEMORY CAR (16:9 NO CROP) • 145,000T • #${formatBigInt(idxBig + 1n)}`, width/2, y - 25);
     }
 
-    function drawCar(x, y, index) {
+    function drawCar(x, y, indexBig) {
         ctx.save(); ctx.translate(x, y); 
         
         ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, -15, CAR_WIDTH - 10, 15);
         drawTruckWheel(150, 0, state.wheelAngle); drawTruckWheel(250, 0, state.wheelAngle); drawTruckWheel(350, 0, state.wheelAngle); drawTruckWheel(450, 0, state.wheelAngle);
         drawTruckWheel(CAR_WIDTH - 450, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 350, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 250, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 150, 0, state.wheelAngle);
         
-        if (index === 0) {
+        if (indexBig === 0n) {
             drawTender(ctx, CAR_WIDTH);
         } else {
-            let logicalIndex = index - 1; 
-            if (logicalIndex < QTY_OTHER) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex, logisticsBrands, "LOGISTICS");
-            } else if (logicalIndex < QTY_OTHER * 2) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - QTY_OTHER, techBrands, "TECH GIANTS");
-            } else if (logicalIndex < QTY_OTHER * 3) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 2), energyBrands, "ENERGY");
-            } else if (logicalIndex < QTY_OTHER * 4) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 3), metalBrands, "PRECIOUS METALS & MINING");
-            } else if (logicalIndex < QTY_OTHER * 5) {
+            let logicalIndexBig = indexBig - 1n; 
+            if (logicalIndexBig < QTY_OTHER_BIG) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig, logisticsBrands, "LOGISTICS");
+            } else if (logicalIndexBig < QTY_OTHER_BIG * 2n) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - QTY_OTHER_BIG, techBrands, "TECH GIANTS");
+            } else if (logicalIndexBig < QTY_OTHER_BIG * 3n) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 2n), energyBrands, "ENERGY");
+            } else if (logicalIndexBig < QTY_OTHER_BIG * 4n) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 3n), metalBrands, "PRECIOUS METALS & MINING");
+            } else if (logicalIndexBig < QTY_OTHER_BIG * 5n) {
                 let blankBrand = { name: "999.9 FINE PLATINUM", bg: "#1a1a1a", text: "#f1c40f" };
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 4), [blankBrand], "PURE PLATINUM");
-            } else if (logicalIndex < QTY_OTHER * 6) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 4n), [blankBrand], "PURE PLATINUM");
+            } else if (logicalIndexBig < QTY_OTHER_BIG * 6n) {
                 let matsonBrand = { name: "MATSON", bg: "#005b9f", text: "#ffffff" };
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 5), [matsonBrand], "MATSON EXCLUSIVE");
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 5n), [matsonBrand], "MATSON EXCLUSIVE");
             } else {
-                drawKyYeuPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 6));
+                drawKyYeuPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 6n));
             }
         }
 
@@ -583,7 +628,7 @@
         const availableDist = state.realDistanceKm - state.spentDistanceKm; let currentCost = 1000 * Math.pow(1000, state.boughtGrowth);
         let maxAffordable = 0; let tempDist = availableDist; let tempCostForMax = currentCost;
         while (tempDist >= tempCostForMax && isFinite(tempCostForMax) && maxAffordable < 100) { maxAffordable++; tempDist -= tempCostForMax; tempCostForMax *= 1000; }
-        if (maxAffordable > 0) { buyGrowthBtn.disabled = false; buyMaxBtn.disabled = false; buyGrowthBtn.textContent = `🌱 +1% T.T (-${formatCost(currentCost)}km)`; buyMaxBtn.textContent = `MAX (+${maxAffordable}%)`; } 
+        if (maxAffordable > 0) { buyGrowthBtn.disabled = false; buyMaxBtn.disabled = false; buyGrowthBtn.textContent = `🌱 +1% T.T (-${formatCost(currentCost)}km)`; buyMaxBtn.textContent = `MAX (+${(maxAffordable * 1).toFixed(0)}%)`; } 
         else { buyGrowthBtn.disabled = true; buyMaxBtn.disabled = true; buyGrowthBtn.textContent = `🌱 Thiếu ${formatCost(currentCost - availableDist)}km`; buyMaxBtn.textContent = `MAX T.T`; }
         drawGauge(currentRPM);
         drawClock();
@@ -592,7 +637,7 @@
     function renderTrainViewport(realDt) {
         const viewWidth = tCanvas.width; const viewHeight = tCanvas.height; ctx.clearRect(0, 0, viewWidth, viewHeight);
         
-        let isNight = false; let darkness = 0;
+        let darkness = 0;
 
         if (!isRaining) {
             const simulatedTimeOfDay = (state.elapsedSeconds + realTimeOffset) % DAY_IN_SECONDS; 
@@ -605,7 +650,7 @@
             ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`; ctx.fillRect(0, 0, viewWidth, viewHeight);
             
             if (darkness > 0) { 
-                isNight = true; ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; 
+                ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; 
                 for (let i = 0; i < stars.length; i++) { ctx.fillRect(stars[i].x * viewWidth, stars[i].y * (viewHeight/2), stars[i].r * 2, stars[i].r * 2); } 
             }
             
@@ -632,36 +677,60 @@
         const groundY = scaledHeight - 85; const lowerGroundY = scaledHeight - 15; 
         let safeDist = isFinite(state.distanceTraveled) ? state.distanceTraveled : 0; 
         
-        if (cameraMode === 1 || cameraMode === 4) { camTcsCar = -state.locomotives; camTcsPixel = 0; } 
-        else if (cameraMode === 2) { camTcsCar = virtualCameraCar; camTcsPixel = virtualCameraPixel; } 
-        else if (cameraMode === 3) { camTcsCar = droneCar; camTcsPixel = dronePixel; } 
+        if (cameraMode === 1 || cameraMode === 4) { 
+            camTcsCar = -BigInt(state.locomotives); 
+            camTcsPixel = 0; 
+        } 
+        else if (cameraMode === 2) { 
+            camTcsCar = virtualCameraCar; 
+            camTcsPixel = virtualCameraPixel; 
+        } 
+        else if (cameraMode === 3) { 
+            camTcsCar = droneCar; 
+            camTcsPixel = dronePixel; 
+        } 
         else if (cameraMode === 5) {
-            let distDiff = safeDist - capturedSafeDist; let distDiffCars = Math.floor(distDiff / CAR_WIDTH); let distDiffPixels = distDiff - (distDiffCars * CAR_WIDTH);
-            camTcsCar = capturedTcsCar + distDiffCars; camTcsPixel = capturedTcsPixel + distDiffPixels;
-            while (camTcsPixel >= CAR_WIDTH) { camTcsCar++; camTcsPixel -= CAR_WIDTH; } while (camTcsPixel < 0) { camTcsCar--; camTcsPixel += CAR_WIDTH; }
+            let distDiff = safeDist - capturedSafeDist; 
+            let distDiffCars = BigInt(Math.floor(distDiff / CAR_WIDTH)); 
+            let distDiffPixels = distDiff - (Number(distDiffCars) * CAR_WIDTH);
+            
+            camTcsCar = capturedTcsCar + distDiffCars; 
+            camTcsPixel = capturedTcsPixel + distDiffPixels;
+            
+            let addC = BigInt(Math.floor(camTcsPixel / CAR_WIDTH));
+            if (addC !== 0n) {
+                camTcsCar += addC;
+                camTcsPixel -= Number(addC) * CAR_WIDTH;
+            }
+            if (camTcsPixel < 0) {
+                let subC = BigInt(Math.ceil(-camTcsPixel / CAR_WIDTH));
+                camTcsCar -= subC;
+                camTcsPixel += Number(subC) * CAR_WIDTH;
+            }
         }
         
         drawSideEnvironment(safeDist, groundY, lowerGroundY, scaledWidth, scaledHeight); 
         drawViaductBridge(safeDist, groundY, scaledWidth, scaledHeight);
 
         let offset = trainStartX - camTcsPixel;
-        // Sử dụng thuật toán culling tương đối (Relative Diff Loop) để chống lag 100%
         let minCarDiff = Math.floor((-CAR_WIDTH - offset) / CAR_WIDTH) - 2;
         let maxCarDiff = Math.ceil((scaledWidth - offset) / CAR_WIDTH) + 2;
         
-        // Căn giới hạn nước bắn (Splash)
-        let trainStartScreen = trainStartX + ((-state.locomotives - camTcsCar) * CAR_WIDTH) - camTcsPixel;
-        let trainEndScreen = trainStartX + ((TOTAL_CARS - camTcsCar) * CAR_WIDTH) - camTcsPixel + LOCO_WIDTH;
+        let trainStartScreen = trainStartX + (Number(-BigInt(state.locomotives) - camTcsCar) * CAR_WIDTH) - camTcsPixel;
+        let trainEndScreen = trainStartX + (Number(TOTAL_CARS_BIG - camTcsCar) * CAR_WIDTH) - camTcsPixel + LOCO_WIDTH;
+
+        let baseCarBig = camTcsCar;
 
         for (let diff = minCarDiff; diff <= maxCarDiff; diff++) {
             let screenX = trainStartX + (diff * CAR_WIDTH) - camTcsPixel;
-            let absoluteIndex = camTcsCar + diff; // Có thể mất chính xác ở phần ngàn, nhưng đảm bảo vị trí render hoàn hảo
             
-            if (absoluteIndex >= -state.locomotives && absoluteIndex < 0) {
+            let preciseIdxBig = baseCarBig + BigInt(diff); 
+            
+            if (preciseIdxBig >= -BigInt(state.locomotives) && preciseIdxBig < 0n) {
                 drawLocomotive(screenX, groundY);
-            } else if (absoluteIndex >= 0 && absoluteIndex < TOTAL_CARS) {
-                drawCar(screenX, groundY, absoluteIndex);
-            } else if (absoluteIndex === TOTAL_CARS) {
+            } else if (preciseIdxBig >= 0n && preciseIdxBig < TOTAL_CARS_BIG) {
+                drawCar(screenX, groundY, preciseIdxBig);
+            } else if (preciseIdxBig === TOTAL_CARS_BIG) {
                 drawRearLocomotive(screenX, groundY);
             }
         }
@@ -689,10 +758,10 @@
         if (darkness > 0.05) {
             for (let diff = minCarDiff; diff <= maxCarDiff; diff++) {
                 let screenX = trainStartX + (diff * CAR_WIDTH) - camTcsPixel;
-                let absoluteIndex = camTcsCar + diff;
-                if (absoluteIndex >= -state.locomotives && absoluteIndex < 0) {
-                    drawLocomotiveLights(screenX, groundY, darkness, absoluteIndex === -state.locomotives); 
-                } else if (absoluteIndex === TOTAL_CARS) {
+                let preciseIdxBig = baseCarBig + BigInt(diff);
+                if (preciseIdxBig >= -BigInt(state.locomotives) && preciseIdxBig < 0n) {
+                    drawLocomotiveLights(screenX, groundY, darkness, preciseIdxBig === -BigInt(state.locomotives)); 
+                } else if (preciseIdxBig === TOTAL_CARS_BIG) {
                     drawRearLocomotiveLights(screenX, groundY, darkness);
                 }
             }
@@ -706,11 +775,12 @@
 
         if (state.running) {
             const dt = realDt * timeMultiplier; state.elapsedSeconds += dt;
-            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01);
+            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01); // Cập nhật mua tay +1%
             let currentMilestone = Math.floor((Math.log10(Math.max(1, currentRPM)) + 1e-9) / 2); if (!isFinite(currentMilestone)) currentMilestone = state.lastEvenMilestone;
             if (currentMilestone > state.lastEvenMilestone) { state.lastEvenMilestone = currentMilestone; }
 
-            state.growthRate = currentBaseGrowthRate + (state.lastEvenMilestone * 0.001); if (!isFinite(state.growthRate)) state.growthRate = 1e300;
+            // Cập nhật thưởng milestone tự động +0.5% thay vì +0.1%
+            state.growthRate = currentBaseGrowthRate + (state.lastEvenMilestone * 0.005); if (!isFinite(state.growthRate)) state.growthRate = 1e300;
             state.currentRPM *= Math.pow(1 + state.growthRate, dt / DAY_IN_SECONDS); if (!isFinite(state.currentRPM)) state.currentRPM = 1e300; currentRPM = state.currentRPM;
 
             currentSpeedKmh = currentRPM / 6.3; if (!isFinite(currentSpeedKmh)) currentSpeedKmh = 1e300;
@@ -727,8 +797,25 @@
 
             if (cameraMode === 3) { 
                 dronePixel += droneDirection * (2000 + currentSpeedKmh * 15) * realDt; 
-                while(dronePixel < 0) { droneCar--; dronePixel += CAR_WIDTH; } while(dronePixel >= CAR_WIDTH) { droneCar++; dronePixel -= CAR_WIDTH; }
-                if (droneCar >= TOTAL_CARS) { droneCar = TOTAL_CARS; dronePixel = 0; droneDirection = -1; } else if (droneCar < -state.locomotives) { droneCar = -state.locomotives; dronePixel = 0; droneDirection = 1; }
+                let addCars = BigInt(Math.floor(dronePixel / CAR_WIDTH));
+                if (addCars !== 0n) {
+                    droneCar += addCars;
+                    dronePixel -= Number(addCars) * CAR_WIDTH;
+                }
+                if (dronePixel < 0) {
+                    let subCars = BigInt(Math.ceil(-dronePixel / CAR_WIDTH));
+                    droneCar -= subCars;
+                    dronePixel += Number(subCars) * CAR_WIDTH;
+                }
+                if (droneCar >= TOTAL_CARS_BIG) { 
+                    droneCar = TOTAL_CARS_BIG; 
+                    dronePixel = 0; 
+                    droneDirection = -1; 
+                } else if (droneCar < -BigInt(state.locomotives)) { 
+                    droneCar = -BigInt(state.locomotives); 
+                    dronePixel = 0; 
+                    droneDirection = 1; 
+                }
             }
             if (Math.random() < 0.05) save(); 
         }
@@ -738,34 +825,73 @@
     function resizeCanvas() { tCanvas.width = scrollContainer.clientWidth; tCanvas.height = scrollContainer.clientHeight; }
     window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
-    function normalizeVirtualCamera() {
-        while (virtualCameraPixel < 0) { virtualCameraCar--; virtualCameraPixel += CAR_WIDTH; }
-        while (virtualCameraPixel >= CAR_WIDTH) { virtualCameraCar++; virtualCameraPixel -= CAR_WIDTH; }
-        if (virtualCameraCar < -state.locomotives) { virtualCameraCar = -state.locomotives; virtualCameraPixel = 0; }
-        if (virtualCameraCar >= TOTAL_CARS) { virtualCameraCar = TOTAL_CARS; virtualCameraPixel = 0; }
-    }
-
     function updateSliderFromCamera() {
-        let currentPos = virtualCameraCar + state.locomotives + (virtualCameraPixel / CAR_WIDTH);
-        trainPositionSlider.value = currentPos / (state.locomotives + TOTAL_CARS);
+        let totalCarsAll = TOTAL_CARS_BIG + BigInt(state.locomotives);
+        let currentCarAll = virtualCameraCar + BigInt(state.locomotives);
+        if (totalCarsAll === 0n) {
+            trainPositionSlider.value = 0;
+            return;
+        }
+        let ratioNum = Number((currentCarAll * 1000000n) / totalCarsAll) / 1000000;
+        trainPositionSlider.value = Math.max(0, Math.min(1, ratioNum));
     }
 
     let isDragging = false; let lastMouseX = 0;
-    scrollContainer.addEventListener('mousedown', (e) => { if (e.target === trainPositionSlider) return; if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } isDragging = true; lastMouseX = e.clientX; });
+    scrollContainer.addEventListener('mousedown', (e) => { 
+        if (e.target === trainPositionSlider) return; 
+        if (cameraMode !== 2 && cameraMode !== 4) { 
+            cameraMode = 2; 
+            virtualCameraCar = camTcsCar;
+            virtualCameraPixel = camTcsPixel;
+            updateCameraButtons(); 
+        } 
+        isDragging = true; 
+        lastMouseX = e.clientX; 
+    });
     window.addEventListener('mouseup', () => { isDragging = false; });
     window.addEventListener('mousemove', (e) => { 
-        if (isDragging && cameraMode === 2) { const deltaX = e.clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.clientX; } 
+        if (isDragging && cameraMode === 2) { 
+            const deltaX = e.clientX - lastMouseX; 
+            virtualCameraPixel -= deltaX * 100; 
+            normalizeVirtualCamera(); 
+            updateSliderFromCamera(); 
+            lastMouseX = e.clientX; 
+        } 
     });
     
-    scrollContainer.addEventListener('touchstart', (e) => { if (e.target === trainPositionSlider) return; if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } isDragging = true; lastMouseX = e.touches[0].clientX; }, {passive: true});
+    scrollContainer.addEventListener('touchstart', (e) => { 
+        if (e.target === trainPositionSlider) return; 
+        if (cameraMode !== 2 && cameraMode !== 4) { 
+            cameraMode = 2; 
+            virtualCameraCar = camTcsCar;
+            virtualCameraPixel = camTcsPixel;
+            updateCameraButtons(); 
+        } 
+        isDragging = true; 
+        lastMouseX = e.touches[0].clientX; 
+    }, {passive: true});
     window.addEventListener('touchend', () => { isDragging = false; });
     window.addEventListener('touchmove', (e) => { 
-        if (isDragging && cameraMode === 2) { const deltaX = e.touches[0].clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.touches[0].clientX; } 
+        if (isDragging && cameraMode === 2) { 
+            const deltaX = e.touches[0].clientX - lastMouseX; 
+            virtualCameraPixel -= deltaX * 100; 
+            normalizeVirtualCamera(); 
+            updateSliderFromCamera(); 
+            lastMouseX = e.touches[0].clientX; 
+        } 
     }, {passive: true});
 
     scrollContainer.addEventListener('wheel', (e) => { 
-        if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } 
-        virtualCameraPixel += (e.deltaY || e.deltaX) * 300; normalizeVirtualCamera(); updateSliderFromCamera(); e.preventDefault(); 
+        if (cameraMode !== 2 && cameraMode !== 4) { 
+            cameraMode = 2; 
+            virtualCameraCar = camTcsCar;
+            virtualCameraPixel = camTcsPixel;
+            updateCameraButtons(); 
+        } 
+        virtualCameraPixel += (e.deltaY || e.deltaX) * 300; 
+        normalizeVirtualCamera(); 
+        updateSliderFromCamera(); 
+        e.preventDefault(); 
     }, {passive: false});
 
     document.getElementById('startBtn').onclick = () => { initAudio(); if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); state.running = true; lastTime = null; };
@@ -773,7 +899,8 @@
     document.getElementById('resetBtn').onclick = () => { 
         state = { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 }; 
         currentRPM = 1; currentSpeedKmh = 1 / 6.3; 
-        virtualCameraCar = -state.locomotives; virtualCameraPixel = 0; droneCar = -state.locomotives; dronePixel = 0; 
+        virtualCameraCar = -BigInt(state.locomotives); virtualCameraPixel = 0; 
+        droneCar = -BigInt(state.locomotives); dronePixel = 0; 
         trainPositionSlider.value = 0; cameraMode = 1; updateCameraButtons(); save(); 
     };
     buyGrowthBtn.onclick = () => { let cost = 1000 * Math.pow(1000, state.boughtGrowth); if (state.realDistanceKm - state.spentDistanceKm >= cost) { state.spentDistanceKm += cost; state.boughtGrowth += 1; save(); updateUI(); } };
@@ -781,8 +908,13 @@
 
     trainPositionSlider.addEventListener('input', (e) => { 
         if (cameraMode !== 2) { cameraMode = 2; updateCameraButtons(); } 
-        let val = parseFloat(e.target.value); let targetTotalCars = val * (state.locomotives + TOTAL_CARS);
-        virtualCameraCar = Math.floor(targetTotalCars) - state.locomotives; virtualCameraPixel = (targetTotalCars - Math.floor(targetTotalCars)) * CAR_WIDTH;
+        let val = parseFloat(e.target.value); 
+        let totalCarsAll = TOTAL_CARS_BIG + BigInt(state.locomotives);
+        let valScaled = BigInt(Math.floor(val * 1000000000)); 
+        let targetCarAll = (totalCarsAll * valScaled) / 1000000000n;
+        
+        virtualCameraCar = targetCarAll - BigInt(state.locomotives);
+        virtualCameraPixel = 0;
         normalizeVirtualCamera();
     });
 
