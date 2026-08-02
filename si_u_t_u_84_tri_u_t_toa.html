@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mô phỏng Tàu hỏa Bạch Kim - 84 Triệu Tỷ Toa</title>
+    <style>
+        :root { --bg-color: #121212; --text-color: #e0e0e0; --accent: #ff69b4; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: relative; touch-action: none; }
+        
+        .train-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; cursor: grab; z-index: 1; }
+        .train-wrapper:active { cursor: grabbing; }
+        
+        .ui-panel { position: absolute; top: 0; left: 0; width: 100%; max-height: 40vh; background: linear-gradient(to bottom, rgba(15,15,20,0.95) 0%, rgba(20,20,25,0.6) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding: 10px 15px; box-sizing: border-box; z-index: 100; display: flex; flex-direction: column; gap: 10px; opacity: 0.8; transition: opacity 0.3s ease; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .ui-panel:hover, .ui-panel:focus-within { opacity: 1; }
+        
+        .panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .panel-header h1 { font-size: 15px; margin: 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); letter-spacing: 0.5px; line-height: 1.3; }
+        .subtitle { font-size: 12px; color: #f1c40f; font-weight: normal; margin-left: 5px; display: inline-block; }
+        
+        .stats-grid { display: flex; gap: 10px; font-size: 12px; color: #ddd; background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 8px; flex-wrap: wrap; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        .stat-value { font-family: monospace; font-size: 13px; color: var(--accent); font-weight: bold; }
+        
+        .panel-controls { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; width: 100%; justify-content: center; }
+        .left-tools { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 8px; flex-wrap: wrap; justify-content: center; }
+        
+        .clock-container { position: relative; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1); border: 2px solid #555; }
+        #clockCanvas { position: absolute; top: 0; left: 0; }
+
+        .time-warp { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #fff; font-weight: bold; width: 150px; }
+        .time-warp input { flex: 1; height: 5px; cursor: pointer; }
+        
+        .button-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; flex: 1; }
+        .button-container > button, .button-container > label { flex: 1 1 calc(16.666% - 6px); min-width: 90px; max-width: 140px; padding: 8px 4px; border-radius: 5px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+        .button-container > button:hover:not(:disabled), .button-container > label:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        .button-container > button:active, .button-container > label:active { transform: translateY(1px) scale(0.96); box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .button-container > button:disabled { opacity: 0.5; cursor: not-allowed; background: #444 !important; color: #888 !important; }
+        
+        .start { background: #4CAF50; } .pause { background: #FF9800; } .reset { background: #f44336; } .horn { background: #9b59b6; } .buy-loco { background: #3498db; } .buy-max { background: #e67e22; } .weather { background: #00bcd4; }
+        .cam-active { background: var(--accent) !important; box-shadow: 0 0 8px var(--accent) !important; } .cam-inactive { background: #333 !important; }
+        
+        .custom-scrollbar { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85); padding: 10px 15px; box-sizing: border-box; z-index: 20; display: flex; align-items: center; gap: 15px; color: #fff; font-size: 11px; font-weight: bold; font-family: system-ui; border-top: 1px solid rgba(255,255,255,0.1); }
+        .custom-scrollbar input { flex: 1; cursor: pointer; height: 8px; }
+        
+        @media (max-width: 768px) {
+            .panel-header { flex-direction: column; align-items: center; text-align: center; }
+            .button-container > button, .button-container > label { flex: 1 1 calc(33.333% - 6px); }
+            .stats-grid { justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .button-container > button, .button-container > label { flex: 1 1 calc(50% - 6px); }
+            .ui-panel { max-height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="train-wrapper" id="scroll-container">
+        <canvas id="train-canvas"></canvas>
+        <div class="custom-scrollbar">
+            <span>◄ ĐẦU TÀU</span>
+            <input type="range" id="trainPositionSlider" min="0" max="1" step="any" value="0">
+            <span>ĐUÔI TÀU ►</span>
+        </div>
+    </div>
+
+    <div class="ui-panel">
+        <div class="panel-header">
+            <h1>🚂 Siêu Tàu 84 Triệu Tỷ Toa (Logistics, Tech, Energy, Metals, Blank, Matson, Kỷ Yếu) <br><span class="subtitle">(Các phân khu 2 Triệu Tỷ Toa | Riêng Kỷ Yếu 72 Triệu Tỷ Toa)</span></h1>
+            <div class="stats-grid">
+                <div>⏱ T.Gian: <span class="stat-value" id="ui-days">0</span>d</div>
+                <div>🔄 Vòng: <span class="stat-value" id="ui-rpm">1.00</span></div>
+                <div>📈 Tốc: <span class="stat-value" id="ui-speed">0.19</span>km/h (<span class="stat-value" id="ui-speed-mph" style="color: #f39c12; font-size: 11px;">0.12</span>mph)</div>
+                <div>🌱 T.Trưởng: <span class="stat-value" id="ui-growth">18.0</span>%</div>
+                <div>📍 Q.Đường: <span class="stat-value" id="ui-distance">0.00</span>km</div>
+                <div>⚖️ T.Trọng: <span class="stat-value">12.180.000.000.000.000.000.000</span> T</div>
+            </div>
+        </div>
+
+        <div class="panel-controls">
+            <div class="left-tools">
+                <canvas id="gauge" width="90" height="45"></canvas>
+                <div class="clock-container">
+                    <canvas id="clockCanvas" width="45" height="45"></canvas>
+                </div>
+                <div class="time-warp">
+                    <label>Tua:</label>
+                    <input type="range" id="timeSlider" min="0" max="6" value="0" step="0.1">
+                    <span id="timeMultiplier" style="font-family: monospace; width: 40px; text-align: right;">1x</span>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button class="start" id="startBtn">▶ B.Đầu</button>
+                <button class="pause" id="pauseBtn">⏸ Dừng</button>
+                <button class="reset" id="resetBtn">↺ Reset</button>
+                <button class="horn" id="hornBtn">📯 Còi</button>
+                <button class="weather" id="weatherBtn">☀️ N.Mưa</button>
+                <button class="buy-loco" id="buyGrowthBtn" disabled>🌱 +1% T.T</button>
+                
+                <button id="cam1Btn" class="cam-active">🎥 C1 (Hông)</button>
+                <button id="cam2Btn" class="cam-inactive">🎥 C2 (Tự Do)</button>
+                <button id="cam3Btn" class="cam-inactive">🎥 C3 (Flycam)</button>
+                <button id="cam4Btn" class="cam-inactive">🎥 C4 (Lái 3D)</button>
+                <button id="cam5Btn" class="cam-inactive">🎥 C5 (Tĩnh)</button>
+                <button class="buy-max" id="buyMaxBtn" disabled>MAX T.T</button>
+
+                <label for="imageUpload169" class="horn" style="background: #e91e63; margin: 0; color: white;">📸 Tải Ảnh Kỷ Yếu (16:9)</label>
+                <input type="file" id="imageUpload169" multiple accept="image/*" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+<script>
+    const QTY_OTHER = 2000000000000000; // 2 Triệu Tỷ Toa (2 Quadrillion) cho mỗi loại
+    const QTY_KYYEU = 7200000000000000; // 72 Triệu Tỷ Toa (72 Quadrillion) cho Kỷ Yếu
+    const CAR_TYPES = 7; 
+    const TENDER_CARS = 1;
+    const TOTAL_CARS = TENDER_CARS + (QTY_OTHER * 6) + QTY_KYYEU; // Tổng 84 Triệu Tỷ toa
+
+    const LOCO_WIDTH = 3000; 
+    const CAR_WIDTH = 3000; 
+    const LOCO_TOP_Y = -325; 
+    const WHEEL_RADIUS = 16;
+    const DAY_IN_SECONDS = 86400;
+    const BASE_GROWTH_RATE = 0.18; 
+
+    let kyYeuImages169 = []; 
+    const defaultImageUrl = 'https://placehold.co/1920x1080/e91e63/ffffff?text=Tải+Ảnh+Của+Bạn+Vào+Đây';
+    const defaultImg = new Image();
+    defaultImg.src = defaultImageUrl;
+    kyYeuImages169.push(defaultImg);
+
+    document.getElementById('imageUpload169').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        kyYeuImages169 = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.src = url;
+            kyYeuImages169.push(img);
+        }
+    });
+
+    const logisticsBrands = [
+        { name: "MSC", bg: "#ffcc00", text: "#000000" }, { name: "Maersk", bg: "#7ca9bc", text: "#ffffff" }, { name: "CMA CGM", bg: "#002366", text: "#ffffff" }, { name: "COSCO", bg: "#002a94", text: "#ffffff" }, { name: "Hapag-Lloyd", bg: "#ff3300", text: "#ffffff" }, { name: "ONE", bg: "#ff007f", text: "#ffffff" }, { name: "Evergreen", bg: "#006400", text: "#ffffff" }, { name: "HMM", bg: "#111111", text: "#ff0000" }, { name: "Yang Ming", bg: "#cccccc", text: "#ff0000" }, { name: "ZIM", bg: "#00a3e0", text: "#ffffff" },
+        { name: "Wan Hai", bg: "#003399", text: "#ffffff" }, { name: "PIL", bg: "#cc0000", text: "#ffffff" }, { name: "SITC", bg: "#0055a5", text: "#ffffff" }, { name: "KMTC", bg: "#003399", text: "#ffffff" }, { name: "X-Press", bg: "#111", text: "#0055a5" }, { name: "Unifeeder", bg: "#f1c40f", text: "#000" }, { name: "TS Lines", bg: "#e65100", text: "#ffffff" }, { name: "Arkas Line", bg: "#002a94", text: "#ffffff" }, { name: "Sinokor", bg: "#003399", text: "#ffffff" }, { name: "RCL", bg: "#0054a4", text: "#ffffff" },
+        { name: "Emirates", bg: "#1a1a1a", text: "#f1c40f" }, { name: "Matson", bg: "#005b9f", text: "#ffffff" }, { name: "SM Line", bg: "#003399", text: "#ffffff" }, { name: "Zhonggu", bg: "#cc0000", text: "#ffffff" }, { name: "Antong", bg: "#0054a4", text: "#ffffff" }, { name: "Ningbo", bg: "#003399", text: "#ffffff" }, { name: "Sea Lead", bg: "#0055a5", text: "#ffffff" }, { name: "Swire", bg: "#cc0000", text: "#ffffff" }, { name: "Grimaldi", bg: "#ffcc00", text: "#003399" }, { name: "Messina", bg: "#e67e22", text: "#002a94" },
+        { name: "WSL", bg: "#005b9f", text: "#ffffff" }, { name: "CNC Line", bg: "#002366", text: "#ffffff" }, { name: "Sealand", bg: "#7ca9bc", text: "#ffffff" }, { name: "Mercosul", bg: "#008a3e", text: "#ffffff" }, { name: "Containerships", bg: "#002366", text: "#ffffff" }, { name: "ANL", bg: "#002366", text: "#ffffff" }, { name: "Comanav", bg: "#002366", text: "#ffffff" }, { name: "UASC", bg: "#ff3300", text: "#ffffff" }, { name: "Hamburg", bg: "#cc0000", text: "#ffffff" }, { name: "NileDelta", bg: "#ff3300", text: "#ffffff" },
+        { name: "Tarros", bg: "#008a3e", text: "#ffcc00" }, { name: "Borchard", bg: "#003399", text: "#ffffff" }, { name: "Tasman", bg: "#005b9f", text: "#ffffff" }, { name: "MELL", bg: "#0055a5", text: "#ffffff" }, { name: "Heung-A", bg: "#cc0000", text: "#ffffff" }, { name: "Namsung", bg: "#003399", text: "#ffffff" }, { name: "Pan Ocean", bg: "#0054a4", text: "#ffffff" }, { name: "Sinotrans", bg: "#cc0000", text: "#ffffff" }, { name: "Anji", bg: "#cc0000", text: "#ffffff" }, { name: "Interasia", bg: "#cc0000", text: "#ffffff" },
+        { name: "King Ocean", bg: "#cc0000", text: "#ffffff" }, { name: "Seaboard", bg: "#005b9f", text: "#ffffff" }, { name: "Tropical", bg: "#e65100", text: "#ffffff" }, { name: "Crowley", bg: "#e51212", text: "#ffffff" }, { name: "Pasha", bg: "#cc0000", text: "#ffffff" }, { name: "Tote", bg: "#0055a5", text: "#ffffff" }, { name: "Dole", bg: "#ffcc00", text: "#e51212" }, { name: "Great White", bg: "#ffffff", text: "#003399" }, { name: "Fyffes", bg: "#003399", text: "#ffffff" }, { name: "Marfret", bg: "#16a085", text: "#ffffff" },
+        { name: "Delmas", bg: "#002366", text: "#ffffff" }, { name: "Safmarine", bg: "#7ca9bc", text: "#ffffff" }, { name: "NileDuty", bg: "#ff3300", text: "#ffffff" }, { name: "ICL", bg: "#003399", text: "#ffffff" }, { name: "ACL", bg: "#0054a4", text: "#ffffff" }, { name: "Bermuda", bg: "#0055a5", text: "#ffffff" }, { name: "Somers", bg: "#005b9f", text: "#ffffff" }, { name: "ECL", bg: "#005b9f", text: "#ffffff" }, { name: "Nirint", bg: "#1e272e", text: "#ffffff" }, { name: "Geest", bg: "#006400", text: "#ffffff" },
+        { name: "Seatrade", bg: "#0055a5", text: "#ffffff" }, { name: "Green Ship", bg: "#006400", text: "#ffffff" }, { name: "MACS", bg: "#003399", text: "#ffffff" }, { name: "Dal", bg: "#0055a5", text: "#ffffff" }, { name: "OACL", bg: "#0054a4", text: "#ffffff" }, { name: "UAFL", bg: "#003399", text: "#ffffff" }, { name: "Mauritius", bg: "#0055a5", text: "#ffffff" }, { name: "SPIL", bg: "#0054a4", text: "#ffffff" }, { name: "Meratus", bg: "#0054a4", text: "#ffffff" }, { name: "Tantra", bg: "#003399", text: "#ffffff" },
+        { name: "Samudera", bg: "#cc0000", text: "#ffffff" }, { name: "Vasi", bg: "#0055a5", text: "#ffffff" }, { name: "BLPL", bg: "#e67e22", text: "#ffffff" }, { name: "BTL", bg: "#f1c40f", text: "#000000" }, { name: "Sarjak", bg: "#1abc9c", text: "#ffffff" }, { name: "Express", bg: "#003399", text: "#ffffff" }, { name: "GFS", bg: "#009900", text: "#ffffff" }, { name: "Safeen", bg: "#0055a5", text: "#ffffff" }, { name: "Folk", bg: "#005b9f", text: "#ffffff" }, { name: "Milaha", bg: "#8a1538", text: "#ffffff" },
+        { name: "Blue Water", bg: "#0055a5", text: "#ffffff" }, { name: "Turkon", bg: "#0055a5", text: "#ffffff" }, { name: "Admiral", bg: "#003399", text: "#ffffff" }, { name: "Akkon", bg: "#003399", text: "#ffffff" }, { name: "Medkon", bg: "#c0392b", text: "#ffffff" }, { name: "dynamic", bg: "#0055a5", text: "#ffffff" }, { name: "New Golden", bg: "#cc0000", text: "#ffffff" }, { name: "Transworld", bg: "#003399", text: "#ffffff" }, { name: "Sharaf", bg: "#1a1a1a", text: "#ffffff" }, { name: "Hapag-X", bg: "#ff3300", text: "#ffffff" }
+    ];
+
+    const techBrands = [
+        { name: "Microsoft", bg: "#00a4ef", text: "#ffffff" }, { name: "Apple", bg: "#f5f5f7", text: "#111111" }, { name: "NVIDIA", bg: "#76b900", text: "#000000" }, { name: "Google", bg: "#4285F4", text: "#ffffff" }, { name: "Amazon", bg: "#232F3E", text: "#FF9900" }, { name: "Meta", bg: "#0668E1", text: "#ffffff" }, { name: "TSMC", bg: "#cc0000", text: "#ffffff" }, { name: "Tesla", bg: "#e31937", text: "#ffffff" }, { name: "Broadcom", bg: "#cc0000", text: "#ffffff" }, { name: "ASML", bg: "#001a6e", text: "#ffffff" },
+        { name: "Samsung", bg: "#1428A0", text: "#ffffff" }, { name: "Tencent", bg: "#0052d9", text: "#ffffff" }, { name: "Oracle", bg: "#c74634", text: "#ffffff" }, { name: "AMD", bg: "#000000", text: "#ed1c24" }, { name: "Qualcomm", bg: "#3253ba", text: "#ffffff" }, { name: "Intel", bg: "#0068B5", text: "#ffffff" }, { name: "Adobe", bg: "#ff0000", text: "#ffffff" }, { name: "Salesforce", bg: "#00a1e0", text: "#ffffff" }, { name: "Cisco", bg: "#00bceb", text: "#000000" }, { name: "SAP", bg: "#008fd3", text: "#ffffff" },
+        { name: "Netflix", bg: "#E50914", text: "#ffffff" }, { name: "IBM", bg: "#0530ad", text: "#ffffff" }, { name: "Texas Inst.", bg: "#cc0000", text: "#ffffff" }, { name: "Alibaba", bg: "#FF6A00", text: "#ffffff" }, { name: "Sony", bg: "#000000", text: "#ffffff" }, { name: "Micron", bg: "#003359", text: "#ffffff" }, { name: "Applied Mat.", bg: "#005baa", text: "#ffffff" }, { name: "ServiceNow", bg: "#81b532", text: "#ffffff" }, { name: "Lam Res.", bg: "#00549f", text: "#ffffff" }, { name: "Tokyo Elec.", bg: "#0033a0", text: "#ffffff" },
+        { name: "Intuit", bg: "#0077c5", text: "#ffffff" }, { name: "Uber", bg: "#000000", text: "#ffffff" }, { name: "Synopsys", bg: "#512c75", text: "#ffffff" }, { name: "Cadence", bg: "#000000", text: "#ffffff" }, { name: "Analog Dev", bg: "#00528e", text: "#ffffff" }, { name: "Palo Alto", bg: "#f26622", text: "#ffffff" }, { name: "Schneider", bg: "#3dcd58", text: "#ffffff" }, { name: "Booking", bg: "#003580", text: "#ffffff" }, { name: "Keyence", bg: "#000000", text: "#ffffff" }, { name: "NXP", bg: "#f68b1f", text: "#ffffff" },
+        { name: "Marvell", bg: "#000000", text: "#ffffff" }, { name: "Workday", bg: "#005cb9", text: "#ffffff" }, { name: "Autodesk", bg: "#000000", text: "#ffffff" }, { name: "Snowflake", bg: "#29b5e8", text: "#ffffff" }, { name: "MercadoLibre", bg: "#ffe600", text: "#2d3277" }, { name: "Infosys", bg: "#007cc3", text: "#ffffff" }, { name: "Meituan", bg: "#ffc300", text: "#000000" }, { name: "Baidu", bg: "#2932e1", text: "#ffffff" }, { name: "NetEase", bg: "#e60012", text: "#ffffff" }, { name: "PDD", bg: "#e02e24", text: "#ffffff" },
+        { name: "JD.com", bg: "#e2231a", text: "#ffffff" }, { name: "KLA Corp", bg: "#000000", text: "#ffffff" }, { name: "STMicro", bg: "#003b7a", text: "#ffffff" }, { name: "Infineon", bg: "#ed1c24", text: "#ffffff" }, { name: "ARM", bg: "#0091bd", text: "#ffffff" }, { name: "MediaTek", bg: "#f37021", text: "#ffffff" }, { name: "SK Hynix", bg: "#e51212", text: "#ffffff" }, { name: "Murata", bg: "#cc0000", text: "#ffffff" }, { name: "Renesas", bg: "#005193", text: "#ffffff" }, { name: "Advantest", bg: "#000000", text: "#ffffff" },
+        { name: "Lasertec", bg: "#003399", text: "#ffffff" }, { name: "Foxconn", bg: "#00479d", text: "#ffffff" }, { name: "Dell", bg: "#0076ce", text: "#ffffff" }, { name: "HP", bg: "#0096d6", text: "#ffffff" }, { name: "HPE", bg: "#00B388", text: "#ffffff" }, { name: "Lenovo", bg: "#e1131a", text: "#ffffff" }, { name: "Xiaomi", bg: "#ff6900", text: "#ffffff" }, { name: "Panasonic", bg: "#00438b", text: "#ffffff" }, { name: "Hitachi", bg: "#e60027", text: "#ffffff" }, { name: "Fujitsu", bg: "#ff0000", text: "#ffffff" },
+        { name: "NEC", bg: "#1414a0", text: "#ffffff" }, { name: "Toshiba", bg: "#ff0000", text: "#ffffff" }, { name: "Canon", bg: "#bf0000", text: "#ffffff" }, { name: "Ricoh", bg: "#cf142b", text: "#ffffff" }, { name: "Kyocera", bg: "#d00000", text: "#ffffff" }, { name: "Siemens", bg: "#009999", text: "#ffffff" }, { name: "Philips", bg: "#0b5ed7", text: "#ffffff" }, { name: "Ericsson", bg: "#002561", text: "#ffffff" }, { name: "Nokia", bg: "#124191", text: "#ffffff" }, { name: "Capgemini", bg: "#0070ad", text: "#ffffff" },
+        { name: "Atos", bg: "#0055a5", text: "#ffffff" }, { name: "Dassault", bg: "#0055a5", text: "#ffffff" }, { name: "Hexagon", bg: "#000000", text: "#ffffff" }, { name: "Amadeus", bg: "#0055a5", text: "#ffffff" }, { name: "VMware", bg: "#717074", text: "#ffffff" }, { name: "Arista", bg: "#000000", text: "#ffffff" }, { name: "CrowdStrike", bg: "#fc0000", text: "#ffffff" }, { name: "Datadog", bg: "#632ca6", text: "#ffffff" }, { name: "Cloudflare", bg: "#f38020", text: "#ffffff" }, { name: "Fortinet", bg: "#e0151d", text: "#ffffff" },
+        { name: "Palantir", bg: "#101113", text: "#ffffff" }, { name: "Splunk", bg: "#000000", text: "#ff0080" }, { name: "Zoom", bg: "#0b5cff", text: "#ffffff" }, { name: "Twilio", bg: "#f22f46", text: "#ffffff" }, { name: "Hubspot", bg: "#ff7a59", text: "#ffffff" }, { name: "Shopify", bg: "#95bf47", text: "#ffffff" }, { name: "Atlassian", bg: "#0052cc", text: "#ffffff" }, { name: "Unity", bg: "#000000", text: "#ffffff" }, { name: "UiPath", bg: "#004fb0", text: "#ffffff" }, { name: "Cognizant", bg: "#000048", text: "#00b259" }
+    ];
+
+    const energyBrands = [
+        { name: "ExxonMobil", bg: "#ffffff", text: "#ff0000" }, { name: "Chevron", bg: "#0054a4", text: "#ffffff" }, { name: "Shell", bg: "#ffcc00", text: "#dd0000" }, { name: "BP", bg: "#009900", text: "#ffe600" }, { name: "Total", bg: "#ffffff", text: "#0055a5" }, { name: "Eni", bg: "#ffcc00", text: "#000000" }, { name: "Conoco", bg: "#ffffff", text: "#000000" }, { name: "Occidental", bg: "#003399", text: "#ffffff" }, { name: "Marathon", bg: "#0054a4", text: "#ffffff" }, { name: "Valero", bg: "#009999", text: "#ffffff" },
+        { name: "Phillips 66", bg: "#cc0000", text: "#ffffff" }, { name: "EOG", bg: "#006400", text: "#ffffff" }, { name: "Pioneer", bg: "#003399", text: "#ffffff" }, { name: "Hess", bg: "#006633", text: "#ffffff" }, { name: "Devon", bg: "#006699", text: "#ffffff" }, { name: "Diamondback", bg: "#ffcc00", text: "#000000" }, { name: "Coterra", bg: "#005530", text: "#ffffff" }, { name: "EQT", bg: "#009966", text: "#ffffff" }, { name: "Apache", bg: "#cc0000", text: "#ffffff" }, { name: "Baker Hughes", bg: "#005530", text: "#ffffff" },
+        { name: "Halliburton", bg: "#cc0000", text: "#ffffff" }, { name: "SLB", bg: "#0033a0", text: "#ffffff" }, { name: "Canadian Nat.", bg: "#006633", text: "#ffffff" }, { name: "Suncor", bg: "#e67e22", text: "#ffffff" }, { name: "Imperial Oil", bg: "#1a1a1a", text: "#ffcc00" }, { name: "Cenovus", bg: "#006400", text: "#ffffff" }, { name: "Enbridge", bg: "#ffcc00", text: "#003399" }, { name: "TC Energy", bg: "#7b868c", text: "#ffffff" }, { name: "Pembina", bg: "#cc0000", text: "#ffffff" }, { name: "Ovintiv", bg: "#5c6670", text: "#ffffff" },
+        { name: "Equinor", bg: "#ff0000", text: "#ffffff" }, { name: "Repsol", bg: "#e67e22", text: "#ffffff" }, { name: "OMV", bg: "#0055a5", text: "#ffffff" }, { name: "Galp", bg: "#e67e22", text: "#ffffff" }, { name: "Wintershall", bg: "#003399", text: "#ffffff" }, { name: "Neptune", bg: "#0054a4", text: "#ffffff" }, { name: "Perenco", bg: "#005b9f", text: "#ffffff" }, { name: "INEOS", bg: "#111111", text: "#ffffff" }, { name: "Lundin", bg: "#0055a5", text: "#ffffff" }, { name: "Aker BP", bg: "#cc0000", text: "#ffffff" },
+        { name: "Gazprom", bg: "#0054a4", text: "#ffffff" }, { name: "Rosneft", bg: "#ffcc00", text: "#000000" }, { name: "Lukoil", bg: "#e51212", text: "#ffffff" }, { name: "Novatek", bg: "#0054a4", text: "#ffffff" }, { name: "Surgut", bg: "#003399", text: "#ffffff" }, { name: "Tatneft", bg: "#006633", text: "#ffffff" }, { name: "Gazprom Neft", bg: "#0054a4", text: "#ffffff" }, { name: "Hellenic", bg: "#0055a5", text: "#ffffff" }, { name: "MOL Group", bg: "#e51212", text: "#ffffff" }, { name: "PKN Orlen", bg: "#e51212", text: "#ffffff" },
+        { name: "Aramco", bg: "#00a3e0", text: "#ffffff" }, { name: "ADNOC", bg: "#0055a5", text: "#ffffff" }, { name: "QatarEnergy", bg: "#8a1538", text: "#ffffff" }, { name: "KPC", bg: "#003399", text: "#ffffff" }, { name: "NIOC", bg: "#1a1a1a", text: "#ffffff" }, { name: "INOC", bg: "#006400", text: "#ffffff" }, { name: "PDO", bg: "#cc0000", text: "#ffffff" }, { name: "BAPCO", bg: "#0055a5", text: "#ffffff" }, { name: "Sonatrach", bg: "#ff7900", text: "#ffffff" }, { name: "NNPC", bg: "#006600", text: "#ffffff" },
+        { name: "NOC Libya", bg: "#006400", text: "#ffffff" }, { name: "EGPC", bg: "#000000", text: "#f1c40f" }, { name: "Sonangol", bg: "#e51212", text: "#ffffff" }, { name: "Sasol", bg: "#0055a5", text: "#ffffff" }, { name: "PetroSA", bg: "#006400", text: "#ffffff" }, { name: "PetroChina", bg: "#cc0000", text: "#ffffff" }, { name: "Sinopec", bg: "#cc0000", text: "#ffffff" }, { name: "CNOOC", bg: "#003399", text: "#ffffff" }, { name: "ONGC", bg: "#8e44ad", text: "#ffffff" }, { name: "Indian Oil", bg: "#f39c12", text: "#003399" },
+        { name: "Reliance", bg: "#003399", text: "#ffffff" }, { name: "Bharat", bg: "#f1c40f", text: "#000000" }, { name: "Hindustan", bg: "#005b9f", text: "#ffffff" }, { name: "OIL India", bg: "#006400", text: "#ffffff" }, { name: "GAIL", bg: "#0055a5", text: "#ffffff" }, { name: "INPEX", bg: "#003399", text: "#ffffff" }, { name: "ENEOS", bg: "#e65100", text: "#ffffff" }, { name: "Idemitsu", bg: "#cc0000", text: "#ffffff" }, { name: "Cosmo", bg: "#e60012", text: "#ffffff" }, { name: "KNOC", bg: "#0055a5", text: "#ffffff" },
+        { name: "SK Innov.", bg: "#e51212", text: "#ffffff" }, { name: "S-Oil", bg: "#f1c40f", text: "#006400" }, { name: "HD Hyundai", bg: "#002c5f", text: "#ffffff" }, { name: "CPC", bg: "#ed1c24", text: "#ffffff" }, { name: "Formosa", bg: "#003399", text: "#ffffff" }, { name: "Petronas", bg: "#00a19c", text: "#ffffff" }, { name: "PTT", bg: "#0055a5", text: "#ffffff" }, { name: "Pertamina", bg: "#ed1c24", text: "#ffffff" }, { name: "PVN", bg: "#ed1c24", text: "#ffd700" }, { name: "Petrolimex", bg: "#f36f21", text: "#ffffff" },
+        { name: "Woodside", bg: "#0055a5", text: "#ffffff" }, { name: "Santos", bg: "#003399", text: "#ffffff" }, { name: "Keppel", bg: "#0055a5", text: "#ffffff" }, { name: "Medco", bg: "#003399", text: "#ffffff" }, { name: "Bangchak", bg: "#006633", text: "#ffffff" }, { name: "Petrobras", bg: "#008a3e", text: "#ffcd00" }, { name: "Pemex", bg: "#006633", text: "#ffffff" }, { name: "PDVSA", bg: "#ed1c24", text: "#ffffff" }, { name: "Ecopetrol", bg: "#2ecc71", text: "#000000" }, { name: "YPF", bg: "#0055a5", text: "#ffffff" }
+    ];
+
+    const metalBrands = [
+        { name: "Newmont", bg: "#1a1a1a", text: "#d4af37" }, { name: "Barrick", bg: "#000000", text: "#ffd700" }, { name: "Agnico", bg: "#111111", text: "#ffcc00" }, { name: "AngloGold", bg: "#222222", text: "#e5c158" }, { name: "Gold Fields", bg: "#0a0a0a", text: "#f1c40f" }, { name: "Kinross", bg: "#1b1b1b", text: "#d4af37" }, { name: "New Gold", bg: "#2c3e50", text: "#f39c12" }, { name: "B2Gold", bg: "#1e1e1e", text: "#ffb300" }, { name: "Zijin", bg: "#003366", text: "#ea80fc" }, { name: "Polyus", bg: "#111111", text: "#ffd700" },
+        { name: "Northern Star", bg: "#002a94", text: "#ffcc00" }, { name: "Evolution", bg: "#2c3e50", text: "#f1c40f" }, { name: "Regis", bg: "#1a1a1a", text: "#d4af37" }, { name: "Perseus", bg: "#0a0a0a", text: "#ffcc00" }, { name: "Endeavour", bg: "#1b1b1b", text: "#e5c158" }, { name: "IAMGOLD", bg: "#000000", text: "#f39c12" }, { name: "Centerra", bg: "#111111", text: "#ffb300" }, { name: "Alamos", bg: "#222222", text: "#d4af37" }, { name: "Eldorado", bg: "#003366", text: "#ffd700" }, { name: "Lundin Gold", bg: "#1e1e1e", text: "#ffcc00" },
+        { name: "Equinox", bg: "#1a1a1a", text: "#e5c158" }, { name: "Torex", bg: "#0a0a0a", text: "#f1c40f" }, { name: "Wesdome", bg: "#1b1b1b", text: "#d4af37" }, { name: "Karora", bg: "#000000", text: "#ffb300" }, { name: "Dundee", bg: "#2c3e50", text: "#f39c12" }, { name: "Centamin", bg: "#111111", text: "#ffcc00" }, { name: "Pan African", bg: "#002a94", text: "#d4af37" }, { name: "Harmony", bg: "#222222", text: "#ffd700" }, { name: "Sibanye", bg: "#1e1e1e", text: "#e5e4e2" }, { name: "Anglo Plat", bg: "#0a0a0a", text: "#e5e4e2" },
+        { name: "Impala", bg: "#1a1a1a", text: "#e5e4e2" }, { name: "Northam", bg: "#1b1b1b", text: "#e5e4e2" }, { name: "Royal Bafokeng", bg: "#000000", text: "#e5e4e2" }, { name: "Aquarius", bg: "#111111", text: "#e5e4e2" }, { name: "Stillwater", bg: "#2c3e50", text: "#e5e4e2" }, { name: "Platinum Grp", bg: "#222222", text: "#e5e4e2" }, { name: "Ivanhoe", bg: "#0a0a0a", text: "#ffcc00" }, { name: "African Rain", bg: "#1a1a1a", text: "#d4af37" }, { name: "Nornickel", bg: "#003366", text: "#c0c0c0" }, { name: "Vale Base", bg: "#0055a5", text: "#ffcc00" },
+        { name: "Glencore", bg: "#1e1e1e", text: "#d4af37" }, { name: "Fresnillo", bg: "#111111", text: "#c0c0c0" }, { name: "Pan American", bg: "#000000", text: "#c0c0c0" }, { name: "Wheaton", bg: "#2c3e50", text: "#ffd700" }, { name: "Franco-Nevada", bg: "#1b1b1b", text: "#d4af37" }, { name: "Royal Gold", bg: "#0a0a0a", text: "#ffcc00" }, { name: "Osisko", bg: "#1a1a1a", text: "#e5c158" }, { name: "Sandstorm", bg: "#222222", text: "#f1c40f" }, { name: "Triple Flag", bg: "#111111", text: "#d4af37" }, { name: "First Majestic", bg: "#1e1e1e", text: "#c0c0c0" },
+        { name: "Hecla", bg: "#002a94", text: "#c0c0c0" }, { name: "Coeur", bg: "#000000", text: "#c0c0c0" }, { name: "MAG Silver", bg: "#1b1b1b", text: "#c0c0c0" }, { name: "SilverCrest", bg: "#1a1a1a", text: "#c0c0c0" }, { name: "Fortuna", bg: "#0a0a0a", text: "#c0c0c0" }, { name: "Gatos", bg: "#222222", text: "#c0c0c0" }, { name: "Hochschild", bg: "#111111", text: "#d4af37" }, { name: "Buenaventura", bg: "#2c3e50", text: "#ffcc00" }, { name: "Volcan", bg: "#1e1e1e", text: "#c0c0c0" }, { name: "SSR Mining", bg: "#000000", text: "#ffd700" },
+        { name: "Oceanagold", bg: "#1a1a1a", text: "#d4af37" }, { name: "Resolute", bg: "#111111", text: "#ffcc00" }, { name: "West African", bg: "#0a0a0a", text: "#f1c40f" }, { name: "Silver Lake", bg: "#1b1b1b", text: "#c0c0c0" }, { name: "Ramelius", bg: "#222222", text: "#d4af37" }, { name: "Gold Road", bg: "#003366", text: "#ffd700" }, { name: "Red 5", bg: "#1e1e1e", text: "#ffcc00" }, { name: "St Barbara", bg: "#1a1a1a", text: "#e5c158" }, { name: "Bellevue", bg: "#000000", text: "#d4af37" }, { name: "De Grey", bg: "#2c3e50", text: "#ffd700" },
+        { name: "Calidus", bg: "#111111", text: "#ffb300" }, { name: "Capricorn", bg: "#0a0a0a", text: "#d4af37" }, { name: "K92", bg: "#1b1b1b", text: "#ffcc00" }, { name: "Argonaut", bg: "#222222", text: "#f1c40f" }, { name: "Victoria", bg: "#1a1a1a", text: "#e5c158" }, { name: "Calibre", bg: "#002a94", text: "#d4af37" }, { name: "Orla", bg: "#1e1e1e", text: "#ffcc00" }, { name: "Fortuna Min", bg: "#000000", text: "#ffd700" }, { name: "NovaGold", bg: "#111111", text: "#f39c12" }, { name: "Seabridge", bg: "#0a0a0a", text: "#d4af37" },
+        { name: "McEwen", bg: "#1b1b1b", text: "#ffb300" }, { name: "Golden Star", bg: "#2c3e50", text: "#ffcc00" }, { name: "Teranga", bg: "#222222", text: "#f1c40f" }, { name: "Alacer", bg: "#1a1a1a", text: "#e5c158" }, { name: "Detour", bg: "#000000", text: "#d4af37" }, { name: "Goldcorp", bg: "#111111", text: "#ffd700" }, { name: "Yamana", bg: "#1e1e1e", text: "#ffb300" }, { name: "Kirkland", bg: "#003366", text: "#ffcc00" }, { name: "SEMAFO", bg: "#0a0a0a", text: "#d4af37" }, { name: "Randgold", bg: "#1b1b1b", text: "#ffd700" },
+        { name: "Shandong", bg: "#cc0000", text: "#ffcc00" }, { name: "China Gold", bg: "#cc0000", text: "#ffd700" }, { name: "Zhongjin", bg: "#111111", text: "#ffcc00" }, { name: "Hunan Gold", bg: "#1a1a1a", text: "#f1c40f" }, { name: "Chifeng", bg: "#222222", text: "#e5c158" }, { name: "Sumitomo", bg: "#000000", text: "#c0c0c0" }, { name: "Mitsubishi", bg: "#2c3e50", text: "#c0c0c0" }, { name: "Tanaka", bg: "#1e1e1e", text: "#e5e4e2" }, { name: "Heraeus", bg: "#0a0a0a", text: "#e5e4e2" }, { name: "Valcambi", bg: "#111111", text: "#f39c12" }
+    ];
+
+    let state = JSON.parse(localStorage.getItem("trainSave84q")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
+    const save = () => localStorage.setItem("trainSave84q", JSON.stringify(state));
+
+    if (state.realDistanceKm === undefined) state.realDistanceKm = 0; if (state.spentDistanceKm === undefined) state.spentDistanceKm = 0; if (state.locomotives === undefined) state.locomotives = 1; if (state.boughtGrowth === undefined) state.boughtGrowth = 0; if (state.lastEvenMilestone === undefined) state.lastEvenMilestone = 0; if (state.lastJoint === undefined) state.lastJoint = 0; if (state.totalRotation === undefined) state.totalRotation = 0; if (state.lastChugStep === undefined) state.lastChugStep = 0;
+    if (state.currentRPM === undefined) state.currentRPM = Math.pow(1 + BASE_GROWTH_RATE, state.elapsedSeconds / DAY_IN_SECONDS);
+    if (state.growthRate === undefined) state.growthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01) + (state.lastEvenMilestone * 0.001);
+
+    let timeMultiplier = 1; let lastTime = null; let currentRPM = state.currentRPM; let currentSpeedKmh = currentRPM / 6.3;
+    let cameraMode = 1; let virtualCameraCar = -state.locomotives; let virtualCameraPixel = 0; let droneCar = -state.locomotives; let dronePixel = 0; let droneDirection = 1; let capturedTcsCar = 0; let capturedTcsPixel = 0; let capturedSafeDist = 0; let camTcsCar = 0; let camTcsPixel = 0;
+
+    let audioCtx = null; let rainSource = null; let rainFilter = null; let rainGainNode = null; let isAudioInitialized = false; let hornOscillators = []; let hornGain = null; let trackNoiseBuffer = null; let isRaining = false;
+    const MAX_RAINDROPS = 800; let raindrops = []; for(let i = 0; i < MAX_RAINDROPS; i++) { raindrops.push({ x: Math.random() * 3000, y: Math.random() * 2000, length: Math.random() * 15 + 5, speedY: Math.random() * 15 + 10, z: Math.random() * 0.5 + 0.5 }); }
+    const now = new Date(); const realTimeOffset = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds(); const stars = Array.from({length: 150}, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.5 }));
+
+    const trainStartX = 150; 
+    const scrollContainer = document.getElementById('scroll-container'); const tCanvas = document.getElementById('train-canvas'); const ctx = tCanvas.getContext('2d'); const gCanvas = document.getElementById('gauge'); const gCtx = gCanvas.getContext('2d'); const trainPositionSlider = document.getElementById('trainPositionSlider'); const uiDays = document.getElementById('ui-days'); const uiRpm = document.getElementById('ui-rpm'); const uiSpeed = document.getElementById('ui-speed'); const uiSpeedMph = document.getElementById('ui-speed-mph'); const uiDistance = document.getElementById('ui-distance'); const uiGrowth = document.getElementById('ui-growth'); const timeSlider = document.getElementById('timeSlider'); const timeMultiplierText = document.getElementById('timeMultiplier'); const buyGrowthBtn = document.getElementById('buyGrowthBtn'); const buyMaxBtn = document.getElementById('buyMaxBtn'); const weatherBtn = document.getElementById('weatherBtn');
+    
+    const clockCanvas = document.getElementById('clockCanvas');
+    const clockCtx = clockCanvas.getContext('2d');
+
+    function initAudio() {
+        if (isAudioInitialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext; audioCtx = new AudioContext(); const bufferSize = audioCtx.sampleRate * 2; 
+        trackNoiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); const tOutput = trackNoiseBuffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { tOutput[i] = Math.random() * 2 - 1; } 
+        const rainBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); const rOutput = rainBuffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { rOutput[i] = Math.random() * 2 - 1; }
+        rainSource = audioCtx.createBufferSource(); rainSource.buffer = rainBuffer; rainSource.loop = true; rainFilter = audioCtx.createBiquadFilter(); rainFilter.type = 'lowpass'; rainFilter.frequency.value = 800; rainGainNode = audioCtx.createGain(); rainGainNode.gain.value = 0; rainSource.connect(rainFilter); rainFilter.connect(rainGainNode); rainGainNode.connect(audioCtx.destination); rainSource.start();
+        isAudioInitialized = true;
+    }
+
+    function playChug(speed) {
+        if (!audioCtx || audioCtx.state !== 'running' || !trackNoiseBuffer) return;
+        let perceivedSpeed = Math.min(speed * timeMultiplier, 50000); let vol = Math.min(0.6, 0.1 + perceivedSpeed / 100); if (vol < 0.05) return;
+        let time = audioCtx.currentTime; let duration = Math.max(0.08, 0.5 - perceivedSpeed / 200); 
+        let noise = audioCtx.createBufferSource(); noise.buffer = trackNoiseBuffer; let filter = audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 300 + Math.min(1500, perceivedSpeed * 5); filter.Q.value = 0.8; let gain = audioCtx.createGain(); gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(vol, time + duration * 0.1); gain.gain.exponentialRampToValueAtTime(0.01, time + duration); noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); noise.start(time); noise.stop(time + duration);
+        let osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(80, time); osc.frequency.exponentialRampToValueAtTime(30, time + duration); let oscGain = audioCtx.createGain(); oscGain.gain.setValueAtTime(0, time); oscGain.gain.linearRampToValueAtTime(vol * 0.5, time + duration * 0.1); oscGain.gain.exponentialRampToValueAtTime(0.01, time + duration); osc.connect(oscGain); oscGain.connect(audioCtx.destination); osc.start(time); osc.stop(time + duration);
+    }
+
+    function updateAudio() {
+        if (!isAudioInitialized || !audioCtx) return;
+        if (isRaining) { if(rainGainNode) rainGainNode.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.5); } else { if(rainGainNode) rainGainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5); }
+    }
+
+    function playHorn() {
+        if (!audioCtx) initAudio(); if (audioCtx.state === 'suspended') audioCtx.resume(); if (hornGain) return; 
+        hornGain = audioCtx.createGain(); hornGain.gain.value = 0.001; hornGain.gain.setValueAtTime(0.001, audioCtx.currentTime); hornGain.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.15); 
+        const frequencies = [261.63, 311.13, 370.0, 415.3, 466.16]; 
+        frequencies.forEach(freq => {
+            const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(freq * 1.02, audioCtx.currentTime + 1); const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 2500; filter.Q.value = 1; osc.connect(filter); filter.connect(hornGain); osc.start(); hornOscillators.push(osc);
+            const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.setValueAtTime(freq, audioCtx.currentTime); osc2.frequency.exponentialRampToValueAtTime(freq * 1.02, audioCtx.currentTime + 1); osc2.connect(hornGain); osc2.start(); hornOscillators.push(osc2);
+        });
+        if (trackNoiseBuffer) { const noise = audioCtx.createBufferSource(); noise.buffer = trackNoiseBuffer; noise.loop = true; const noiseFilter = audioCtx.createBiquadFilter(); noiseFilter.type = 'bandpass'; noiseFilter.frequency.value = 1200; const noiseGain = audioCtx.createGain(); noiseGain.gain.value = 0.3; noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(hornGain); noise.start(); hornOscillators.push(noise); }
+        hornGain.connect(audioCtx.destination);
+    }
+
+    function stopHorn() {
+        if (!hornGain) return;
+        const currentGain = hornGain; const currentOscs = hornOscillators; hornGain = null; hornOscillators = [];
+        try { const now = audioCtx.currentTime; currentGain.gain.cancelScheduledValues(now); currentGain.gain.setValueAtTime(currentGain.gain.value || 0.8, now); currentGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2); } catch(e) { }
+        setTimeout(() => { currentOscs.forEach(osc => { try { osc.stop(); osc.disconnect(); } catch(e){} }); try { currentGain.disconnect(); } catch(e){} }, 1500);
+    }
+
+    function getParallaxOffset(multiplier, modulo, additionalOffset = 0, safeDist = 0) {
+        let m100 = Math.round(multiplier * 100); let bigMod = BigInt(Math.round(modulo * 100));
+        let t1 = Number((BigInt(-camTcsCar) * 3000n * BigInt(m100)) % bigMod) / 100; let t2 = (-camTcsPixel * multiplier) % modulo; let t3 = (safeDist * multiplier) % modulo;
+        let res = (t1 + t2 + t3 + additionalOffset) % modulo; if (res < 0) res += modulo; return res;
+    }
+
+    function drawWheel(x, y, angle) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+        ctx.beginPath(); ctx.arc(0, 0, WHEEL_RADIUS, 0, Math.PI * 2); ctx.fillStyle = "#333"; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#7f8c8d"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#555"; ctx.lineWidth = 2;
+        for(let i=0; i<4; i++) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(WHEEL_RADIUS - 2, 0); ctx.stroke(); ctx.rotate(Math.PI/2); } ctx.restore();
+    }
+
+    function drawLargeWheel(x, y, angle) {
+        let R = WHEEL_RADIUS * 2; ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+        ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fillStyle = "#111"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#c0392b"; ctx.stroke();
+        for(let j=0; j<8; j++) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R - 4, 0); ctx.stroke(); ctx.rotate(Math.PI/4); }
+        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fillStyle = "#f1c40f"; ctx.fill(); ctx.restore();
+    }
+
+    function drawTruckWheel(x, y, angle) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+        ctx.beginPath(); ctx.arc(0, 0, WHEEL_RADIUS, 0, Math.PI * 2); ctx.fillStyle = "#111"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#222";
+        for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.moveTo(WHEEL_RADIUS - 4, 0); ctx.lineTo(WHEEL_RADIUS, 0); ctx.stroke(); ctx.rotate((Math.PI * 2) / 8); }
+        ctx.beginPath(); ctx.arc(0, 0, WHEEL_RADIUS * 0.55, 0, Math.PI * 2); ctx.fillStyle = "#bdc3c7"; ctx.fill(); ctx.strokeStyle = "#7f8c8d"; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fillStyle = "#2c3e50"; ctx.fill(); ctx.fillStyle = "#fff";
+        for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.arc(WHEEL_RADIUS * 0.35, 0, 1.2, 0, Math.PI * 2); ctx.fill(); ctx.rotate((Math.PI * 2) / 6); } ctx.restore();
+    }
+
+    function drawLocomotive(x, y, isFlipped = false) {
+        ctx.save(); ctx.translate(x, y); let angle = isFlipped ? -state.wheelAngle : state.wheelAngle;
+        let CHASSIS_Y = -70; 
+        ctx.fillStyle = "#0a0a0c"; ctx.fillRect(150, CHASSIS_Y, LOCO_WIDTH - 400, Math.abs(CHASSIS_Y) - 5);
+        for(let i=0; i<4; i++) drawWheel(200 + i*100, 0, angle); 
+        let largeWheelAngle = angle / 2; let lwR = WHEEL_RADIUS * 2; let rodPts = [];
+        for(let i=0; i<8; i++) { let wx = 750 + i * (lwR * 2 + 50); drawLargeWheel(wx, -WHEEL_RADIUS, largeWheelAngle); rodPts.push({x: wx + Math.cos(largeWheelAngle) * (lwR*0.65), y: -WHEEL_RADIUS + Math.sin(largeWheelAngle) * (lwR*0.65)}); }
+        for(let i=0; i<4; i++) drawWheel(LOCO_WIDTH - 600 + i*100, 0, angle);
+        ctx.strokeStyle = "#bdc3c7"; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(rodPts[0].x - 180, rodPts[0].y); for(let pt of rodPts) { ctx.lineTo(pt.x, pt.y); } ctx.stroke();
+        ctx.fillStyle = "#7f8c8d"; ctx.fillRect(rodPts[0].x - 220, rodPts[0].y - 30, 100, 60); 
+        ctx.fillStyle = "#1a252f"; ctx.fillRect(100, CHASSIS_Y, LOCO_WIDTH - 200, 20); 
+        ctx.fillStyle = "#2c3e50"; ctx.beginPath(); ctx.moveTo(20, CHASSIS_Y); ctx.bezierCurveTo(200, CHASSIS_Y - 30, 600, LOCO_TOP_Y, 1500, LOCO_TOP_Y); ctx.lineTo(LOCO_WIDTH, LOCO_TOP_Y); ctx.lineTo(LOCO_WIDTH, CHASSIS_Y); ctx.lineTo(20, CHASSIS_Y); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#c0392b"; ctx.fillRect(100, CHASSIS_Y - 25, LOCO_WIDTH - 200, 15); ctx.fillStyle = "#e67e22"; ctx.fillRect(1500, LOCO_TOP_Y, LOCO_WIDTH - 1500, 20);
+        ctx.fillStyle = "#111"; ctx.fillRect(LOCO_WIDTH - 700, LOCO_TOP_Y - 90, 600, 90); ctx.fillStyle = "#3498db"; ctx.fillRect(LOCO_WIDTH - 650, LOCO_TOP_Y - 70, 120, 50); 
+        ctx.fillStyle = "#222"; ctx.beginPath(); ctx.moveTo(1600, LOCO_TOP_Y); ctx.lineTo(1650, LOCO_TOP_Y - 80); ctx.lineTo(1750, LOCO_TOP_Y - 80); ctx.lineTo(1700, LOCO_TOP_Y); ctx.fill();
+        ctx.strokeStyle = "#7f8c8d"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(2200, LOCO_TOP_Y); ctx.lineTo(2300, LOCO_TOP_Y - 50); ctx.lineTo(2400, LOCO_TOP_Y); ctx.moveTo(2250, LOCO_TOP_Y - 50); ctx.lineTo(2350, LOCO_TOP_Y - 50); ctx.stroke();
+        ctx.fillStyle = "#f1c40f"; ctx.font = "bold 40px monospace"; ctx.textAlign = "center"; ctx.fillText("UNION PACIFIC BIG BOY 4884", 1500, CHASSIS_Y - 60);
+        ctx.restore();
+    }
+
+    function drawRearLocomotive(x, y) { ctx.save(); ctx.translate(x + LOCO_WIDTH, y); ctx.scale(-1, 1); drawLocomotive(0, 0, true); ctx.restore(); }
+
+    function drawLocomotiveLights(x, y, darkness, isFront = true) {
+        ctx.save(); ctx.translate(x, y); ctx.fillStyle = `rgba(255, 240, 150, ${darkness * 0.8})`; ctx.beginPath(); ctx.moveTo(250, -45); ctx.quadraticCurveTo(300, -65, 350, -65); ctx.lineTo(360, -50); ctx.lineTo(250, -35); ctx.closePath(); ctx.fill();
+        if (isFront) { ctx.fillStyle = `rgba(255, 255, 200, ${darkness * 0.6})`; ctx.beginPath(); ctx.moveTo(30, -25); ctx.lineTo(-2000, -300); ctx.lineTo(-2000, 150); ctx.fill(); } ctx.restore();
+    }
+
+    function drawRearLocomotiveLights(x, y, darkness) {
+        ctx.save(); ctx.translate(x + LOCO_WIDTH, y); ctx.scale(-1, 1); drawLocomotiveLights(0, 0, darkness, false);
+        ctx.fillStyle = `rgba(255, 50, 50, ${darkness * 0.9})`; ctx.beginPath(); ctx.arc(20, -45, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = `rgba(255, 50, 50, ${darkness * 0.3})`; ctx.beginPath(); ctx.moveTo(20, -45); ctx.lineTo(-150, -120); ctx.lineTo(-150, 30); ctx.fill(); ctx.restore();
+    }
+
+    function drawTender(ctx, width) {
+        let h = 250; let y = -265; let w = width - 20;
+        ctx.fillStyle = "#1a252f"; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y + h, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y + h, w, 20); }
+        ctx.fillStyle = "#111"; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, h, 10); ctx.fill(); } else { ctx.fillRect(10, y, w, h); }
+        ctx.strokeStyle = "#333"; ctx.lineWidth = 5; for(let px = 50; px < w; px += 200) { ctx.beginPath(); ctx.moveTo(10 + px, y); ctx.lineTo(10 + px, y + h); ctx.stroke(); }
+        let seed = 12345; let rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+        for(let i=0; i<200; i++) { let ox = 20 + rand() * (w - 40); let oy = y - 10 - rand() * 40; let or = 15 + rand() * 25; ctx.fillStyle = rand() > 0.5 ? "#222" : (rand() > 0.5 ? "#333" : "#0a0a0a"); ctx.beginPath(); ctx.arc(ox, oy, or, 0, Math.PI*2); ctx.fill(); }
+        ctx.fillStyle = "#c0392b"; ctx.fillRect(10, y + h/2 + 20, w, 15); ctx.fillStyle = "#fff"; ctx.font = "bold 32px monospace"; ctx.textAlign = "center"; ctx.fillText("STEAM TENDER • HEAVY COAL SUPPLY", width/2, y + h/2 - 10);
+    }
+
+    function drawGenericPlatinumContainer(ctx, width, idx, brandArray, titleStr) {
+        let w = width - 20; let y = -35;
+        ctx.fillStyle = "#1a252f"; 
+        ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
+        
+        ctx.save(); ctx.beginPath(); ctx.rect(10, y, w, 20); ctx.clip();
+        ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 6;
+        for(let sx = -20; sx < w + 20; sx += 30) { ctx.beginPath(); ctx.moveTo(10 + sx, y); ctx.lineTo(10 + sx - 20, y + 20); ctx.stroke(); }
+        ctx.restore();
+
+        const CONT_HEIGHT_LOCAL = 270; const cy = y - CONT_HEIGHT_LOCAL; 
+        let brand = brandArray[idx % brandArray.length];
+
+        let platGrad = ctx.createLinearGradient(0, cy, 0, cy + CONT_HEIGHT_LOCAL);
+        platGrad.addColorStop(0, "#e5e4e2"); platGrad.addColorStop(0.3, "#ffffff"); platGrad.addColorStop(0.5, "#d3d3d3"); platGrad.addColorStop(0.8, "#f8f9fa"); platGrad.addColorStop(1, "#b0c4de");
+        
+        ctx.fillStyle = platGrad;
+        ctx.fillRect(10, cy, w, CONT_HEIGHT_LOCAL);
+        
+        ctx.strokeStyle = "rgba(0,0,0,0.15)"; ctx.lineWidth = 4;
+        for(let px = 30; px < w; px += 80) { ctx.beginPath(); ctx.moveTo(10 + px, cy); ctx.lineTo(10 + px, cy + CONT_HEIGHT_LOCAL); ctx.stroke(); }
+
+        let logoW = 2000; let logoH = 180;
+        let logoX = 10 + w / 2 - logoW / 2; let logoY = cy + CONT_HEIGHT_LOCAL / 2 - logoH / 2 - 10;
+
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(logoX + 8, logoY + 8, logoW, logoH, 20); ctx.fill(); }
+        ctx.fillStyle = brand.bg; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(logoX, logoY, logoW, logoH, 20); ctx.fill(); } else { ctx.fillRect(logoX, logoY, logoW, logoH); }
+        ctx.strokeStyle = "#e5e4e2"; ctx.lineWidth = 10; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(logoX, logoY, logoW, logoH, 20); ctx.stroke(); }
+        
+        ctx.fillStyle = brand.text; ctx.font = "900 90px Arial Black, Impact, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(brand.name.toUpperCase(), logoX + logoW / 2, logoY + logoH / 2 + 5);
+
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(10 + w - 450, cy + 20, 430, 45);
+        ctx.fillStyle = "#f1c40f"; ctx.font = "bold 22px monospace"; ctx.textAlign = "right"; ctx.textBaseline = "top";
+        ctx.fillText("SOLID PLATINUM HEAVY CARGO", 10 + w - 30, cy + 30);
+
+        ctx.fillStyle = "#d35400";
+        ctx.fillRect(10, cy - 8, 30, 16); ctx.fillRect(10 + w - 30, cy - 8, 30, 16);
+        ctx.fillRect(10, y - 8, 30, 16); ctx.fillRect(10 + w - 30, y - 8, 30, 16);
+
+        ctx.beginPath(); ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
+        if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
+        ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(`500ft SOLID PLATINUM ${titleStr} (${brand.name.toUpperCase()}) • 145,000T • #${idx+1}`, width/2, y - 25);
+    }
+
+    function drawKyYeuPlatinumContainer(ctx, width, idx) {
+        let w = width - 20; let y = -35;
+        ctx.fillStyle = "#1a252f"; 
+        ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
+        
+        const CONT_HEIGHT_LOCAL = 270; const cy = y - CONT_HEIGHT_LOCAL; 
+        let platGrad = ctx.createLinearGradient(0, cy, 0, cy + CONT_HEIGHT_LOCAL);
+        platGrad.addColorStop(0, "#e5e4e2"); platGrad.addColorStop(0.3, "#ffffff"); platGrad.addColorStop(0.5, "#d3d3d3"); platGrad.addColorStop(0.8, "#f8f9fa"); platGrad.addColorStop(1, "#b0c4de");
+        
+        ctx.fillStyle = platGrad;
+        ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, cy, w, CONT_HEIGHT_LOCAL, 8); ctx.fill(); } else { ctx.fillRect(10, cy, w, CONT_HEIGHT_LOCAL); }
+
+        // Mật độ 6 màn hình chuẩn 16:9, có khoảng trống 2 đầu
+        const numSlots = 6;
+        const slotH = CONT_HEIGHT_LOCAL - 20; 
+        const slotW = slotH * (16 / 9);
+        const totalSlotW = numSlots * slotW; 
+        const gapX = (w - totalSlotW) / 2; 
+
+        for (let i = 0; i < numSlots; i++) {
+            let slotX = 10 + gapX + i * slotW;
+            let startY = cy + 10;
+
+            ctx.fillStyle = "#0a0a0c";
+            ctx.fillRect(slotX, startY, slotW, slotH);
+
+            if (kyYeuImages169 && kyYeuImages169.length > 0) {
+                let imgIdx = (idx * numSlots + i) % kyYeuImages169.length;
+                let img = kyYeuImages169[imgIdx];
+
+                if (img && img.complete && img.naturalWidth > 0) {
+                    const imgAspect = img.naturalWidth / img.naturalHeight;
+                    const slotAspect = 16 / 9;
+                    let renderW, renderH, offsetX, offsetY;
+
+                    // Chế độ LETTERBOX: Không cắt, nằm vừa trong khung, lấp đầy phần dư bằng đen
+                    if (imgAspect > slotAspect) {
+                        renderW = slotW;
+                        renderH = renderW / imgAspect;
+                    } else {
+                        renderH = slotH;
+                        renderW = renderH * imgAspect;
+                    }
+
+                    offsetX = slotX + (slotW - renderW) / 2;
+                    offsetY = startY + (slotH - renderH) / 2;
+
+                    ctx.globalAlpha = 1.0;
+                    ctx.drawImage(img, offsetX, offsetY, renderW, renderH);
+
+                    let glass = ctx.createLinearGradient(slotX, startY, slotX + slotW, startY + slotH);
+                    glass.addColorStop(0, "rgba(255,255,255,0.3)"); glass.addColorStop(0.5, "rgba(255,255,255,0)"); glass.addColorStop(1, "rgba(255,255,255,0.1)");
+                    ctx.fillStyle = glass;
+                    ctx.fillRect(slotX, startY, slotW, slotH);
+                }
+            } else {
+                ctx.fillStyle = "#333"; ctx.font = "bold 20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; 
+                ctx.fillText("ALBUM 16:9", slotX + slotW/2, startY + slotH/2);
+            }
+            
+            ctx.strokeStyle = "#333"; ctx.lineWidth = 2;
+            ctx.strokeRect(slotX, startY, slotW, slotH);
+        }
+
+        ctx.beginPath(); ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
+        if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
+        ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(`500ft SOLID PLATINUM MEMORY CAR (16:9 NO CROP) • 145,000T • #${idx+1}`, width/2, y - 25);
+    }
+
+    function drawCar(x, y, index) {
+        ctx.save(); ctx.translate(x, y); 
+        
+        ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, -15, CAR_WIDTH - 10, 15);
+        drawTruckWheel(150, 0, state.wheelAngle); drawTruckWheel(250, 0, state.wheelAngle); drawTruckWheel(350, 0, state.wheelAngle); drawTruckWheel(450, 0, state.wheelAngle);
+        drawTruckWheel(CAR_WIDTH - 450, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 350, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 250, 0, state.wheelAngle); drawTruckWheel(CAR_WIDTH - 150, 0, state.wheelAngle);
+        
+        if (index === 0) {
+            drawTender(ctx, CAR_WIDTH);
+        } else {
+            let logicalIndex = index - 1; 
+            if (logicalIndex < QTY_OTHER) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex, logisticsBrands, "LOGISTICS");
+            } else if (logicalIndex < QTY_OTHER * 2) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - QTY_OTHER, techBrands, "TECH GIANTS");
+            } else if (logicalIndex < QTY_OTHER * 3) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 2), energyBrands, "ENERGY");
+            } else if (logicalIndex < QTY_OTHER * 4) {
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 3), metalBrands, "PRECIOUS METALS & MINING");
+            } else if (logicalIndex < QTY_OTHER * 5) {
+                let blankBrand = { name: "999.9 FINE PLATINUM", bg: "#1a1a1a", text: "#f1c40f" };
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 4), [blankBrand], "PURE PLATINUM");
+            } else if (logicalIndex < QTY_OTHER * 6) {
+                let matsonBrand = { name: "MATSON", bg: "#005b9f", text: "#ffffff" };
+                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 5), [matsonBrand], "MATSON EXCLUSIVE");
+            } else {
+                drawKyYeuPlatinumContainer(ctx, CAR_WIDTH, logicalIndex - (QTY_OTHER * 6));
+            }
+        }
+
+        ctx.fillStyle = "#7f8c8d"; ctx.fillRect(CAR_WIDTH - 15, -12, 15, 6); ctx.restore();
+    }
+
+    function drawViaductBridge(safeDist, groundY, viewWidth, viewHeight) {
+        const pillarSpacing = 400; let pillarOffset = getParallaxOffset(1.0, pillarSpacing, 0, safeDist); if (pillarOffset > 0) pillarOffset -= pillarSpacing;
+        ctx.fillStyle = "#78909c"; ctx.fillRect(0, groundY + 18, viewWidth, 24); ctx.fillStyle = "#455a64"; ctx.fillRect(0, groundY + 42, viewWidth, 6); ctx.fillStyle = "#607d8b";
+        for(let i = -pillarSpacing; i < viewWidth + pillarSpacing; i += pillarSpacing) { let px = i + pillarOffset; ctx.beginPath(); ctx.moveTo(px - 50, groundY + 48); ctx.lineTo(px + 50, groundY + 48); ctx.lineTo(px + 25, groundY + 80); ctx.lineTo(px - 25, groundY + 80); ctx.closePath(); ctx.fill(); ctx.fillRect(px - 25, groundY + 80, 50, viewHeight - (groundY + 80)); }
+        ctx.fillStyle = "#5D4037"; let safeOffset = getParallaxOffset(1.0, 60, 0, safeDist); if (safeOffset > 0) safeOffset -= 60;
+        for(let i = safeOffset - 60; i < viewWidth; i += 60) { ctx.fillRect(i, groundY + 24, 18, 9); } ctx.fillStyle = "#B0BEC5"; ctx.fillRect(0, groundY + 18, viewWidth, 6);
+    }
+
+    function drawSideEnvironment(safeDist, groundY, lowerGroundY, viewWidth, viewHeight) {
+        let cloudColor = isRaining ? "rgba(100, 110, 120, 0.9)" : "rgba(255, 255, 255, 0.8)";
+        ctx.fillStyle = cloudColor; 
+        let cloudOffset = getParallaxOffset(0.1, 800, state.elapsedSeconds * 20, safeDist); 
+        if (cloudOffset < 0) cloudOffset += 800;
+        
+        for(let i = -800; i < viewWidth + 800; i += 400) { let cx = i + cloudOffset; ctx.beginPath(); ctx.arc(cx + 200, 80, 30, 0, Math.PI * 2); ctx.arc(cx + 240, 80, 40, 0, Math.PI * 2); ctx.fill(); }
+        
+        let hillColor = isRaining ? "#6e8b70" : "#A5D6A7";
+        ctx.fillStyle = hillColor; ctx.beginPath(); const hillWidth = 1000; 
+        
+        let hillOffset = getParallaxOffset(0.05, hillWidth, 0, safeDist); 
+        if (hillOffset > 0) hillOffset -= hillWidth; 
+        
+        let startX = -hillWidth * 2; ctx.moveTo(startX + hillOffset, groundY);
+        for(let i = startX; i < viewWidth + hillWidth; i += hillWidth) { let mx = i + hillOffset; ctx.quadraticCurveTo(mx + hillWidth / 2, groundY - 180, mx + hillWidth, groundY); } ctx.lineTo(viewWidth, groundY); ctx.lineTo(0, groundY); ctx.fill();
+        const grassStripW = 150; 
+        
+        let grassOff = getParallaxOffset(0.8, grassStripW * 2, 0, safeDist); 
+        if (grassOff > 0) grassOff -= grassStripW * 2;
+        
+        let grassC1 = isRaining ? "#5b8c5e" : "#81C784";
+        let grassC2 = isRaining ? "#4b7c4e" : "#66BB6A";
+
+        for (let i = -grassStripW*2; i < viewWidth + grassStripW*2; i += grassStripW) { let px = i + grassOff; ctx.fillStyle = Math.abs(Math.floor(i / grassStripW)) % 2 === 0 ? grassC1 : grassC2; ctx.fillRect(px, groundY, grassStripW, viewHeight - groundY); }
+        
+        let treeOffset = getParallaxOffset(0.8, 400, 0, safeDist); 
+        if (treeOffset > 0) treeOffset -= 400; 
+        
+        let trunkC = isRaining ? "#3d2a25" : "#5D4037";
+        let leafC = isRaining ? "#1e5222" : "#2E7D32";
+
+        ctx.fillStyle = trunkC; for(let i = -400; i < viewWidth + 400; i += 400) { ctx.fillRect(i + treeOffset + 190, lowerGroundY - 50, 15, 50); }
+        ctx.fillStyle = leafC; ctx.beginPath(); for(let i = -400; i < viewWidth + 400; i += 400) { let tx = i + treeOffset; ctx.moveTo(tx + 200, lowerGroundY - 160); ctx.lineTo(tx + 150, lowerGroundY - 70); ctx.lineTo(tx + 250, lowerGroundY - 70); ctx.moveTo(tx + 200, lowerGroundY - 110);  ctx.lineTo(tx + 130, lowerGroundY - 30); ctx.lineTo(tx + 270, lowerGroundY - 30); } ctx.fill();
+        const poleSpacing = 600; 
+        
+        let powerOffset = getParallaxOffset(1.0, poleSpacing, 0, safeDist); 
+        if (powerOffset > 0) powerOffset -= poleSpacing;
+        
+        ctx.strokeStyle = "#555"; ctx.lineWidth = 3; ctx.beginPath(); for(let i = -poleSpacing; i < viewWidth + poleSpacing; i += poleSpacing) { let px = i + powerOffset; ctx.moveTo(px, lowerGroundY - 250); ctx.quadraticCurveTo(px + poleSpacing/2, lowerGroundY - 180, px + poleSpacing, lowerGroundY - 250); ctx.moveTo(px - 30, lowerGroundY - 220); ctx.quadraticCurveTo(px + poleSpacing/2, lowerGroundY - 150, px + poleSpacing - 30, lowerGroundY - 220); } ctx.stroke();
+        for(let i = -poleSpacing; i < viewWidth + poleSpacing; i += poleSpacing) { let px = i + powerOffset; ctx.fillStyle = "#7f8c8d"; ctx.fillRect(px - 8, lowerGroundY - 260, 16, 260); ctx.fillRect(px - 45, lowerGroundY - 250, 90, 8); ctx.fillRect(px - 60, lowerGroundY - 220, 120, 8); }
+    }
+
+    function drawGauge(rpm) {
+        gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height); const cx = gCanvas.width / 2; const cy = gCanvas.height - 5; const r = Math.min(cx, gCanvas.height) - 5;
+        let safeRpm = isFinite(rpm) ? rpm : 1e300; let maxGauge = 10; if (safeRpm > 8) maxGauge = Math.pow(10, Math.ceil(Math.log10(Math.max(1, safeRpm))));
+        gCtx.beginPath(); gCtx.arc(cx, cy, r, Math.PI, 0); gCtx.lineWidth = Math.max(4, r / 6); gCtx.strokeStyle = "#333"; gCtx.stroke();
+        const pct = Math.max(0, Math.min(1, safeRpm / maxGauge)); gCtx.beginPath(); gCtx.moveTo(cx, cy); gCtx.lineTo(cx + Math.cos(Math.PI + (pct * Math.PI)) * (r - 5), cy + Math.sin(Math.PI + (pct * Math.PI)) * (r - 5)); gCtx.strokeStyle = "#ff69b4"; gCtx.lineWidth = 3; gCtx.stroke();
+    }
+
+    function drawHand(ctx, pos, length, width, color) {
+        ctx.beginPath();
+        ctx.lineWidth = width;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = color;
+        ctx.moveTo(0,0);
+        ctx.rotate(pos);
+        ctx.lineTo(0, -length);
+        ctx.stroke();
+        ctx.rotate(-pos);
+    }
+
+    function drawClock() {
+        const width = clockCanvas.width;
+        const height = clockCanvas.height;
+        const radius = width / 2;
+        clockCtx.clearRect(0, 0, width, height);
+
+        const simulatedSecondsTotal = state.elapsedSeconds + realTimeOffset;
+        const hours = (Math.floor(simulatedSecondsTotal / 3600) % 24);
+        const minutes = (Math.floor(simulatedSecondsTotal / 60) % 60);
+        const seconds = (simulatedSecondsTotal % 60);
+
+        clockCtx.save();
+        clockCtx.translate(radius, radius);
+
+        clockCtx.beginPath();
+        clockCtx.arc(0, 0, radius - 2, 0, 2 * Math.PI);
+        clockCtx.fillStyle = 'transparent';
+        clockCtx.fill();
+
+        for (let num = 1; num <= 12; num++) {
+            let ang = num * Math.PI / 6;
+            clockCtx.rotate(ang);
+            clockCtx.translate(0, -radius + 6);
+            clockCtx.rotate(-ang);
+            clockCtx.fillStyle = '#f1c40f';
+            clockCtx.beginPath();
+            clockCtx.arc(0, 0, 1.5, 0, 2 * Math.PI);
+            clockCtx.fill();
+            clockCtx.rotate(ang);
+            clockCtx.translate(0, radius - 6);
+            clockCtx.rotate(-ang);
+        }
+
+        clockCtx.beginPath();
+        clockCtx.arc(0, 0, 2, 0, 2 * Math.PI);
+        clockCtx.fillStyle = '#fff';
+        clockCtx.fill();
+
+        let hourAngle = (hours * Math.PI / 6) + (minutes * Math.PI / (6 * 60)) + (seconds * Math.PI / (360 * 60));
+        drawHand(clockCtx, hourAngle, radius * 0.45, 3, '#fff');
+
+        let minuteAngle = (minutes * Math.PI / 30) + (seconds * Math.PI / (30 * 60));
+        drawHand(clockCtx, minuteAngle, radius * 0.65, 2, '#fff');
+
+        let secondAngle = (seconds * Math.PI / 30);
+        drawHand(clockCtx, secondAngle, radius * 0.8, 1, '#e74c3c');
+
+        clockCtx.restore();
+    }
+
+    function drawRainEffect(ctx, viewWidth, viewHeight, dt) {
+        ctx.strokeStyle = 'rgba(200, 210, 230, 0.5)'; ctx.lineWidth = 1.5; ctx.beginPath();
+        let windX = 0; if (state.running) { windX = currentSpeedKmh; if (currentSpeedKmh > 80) windX = currentSpeedKmh * 1.5; }
+        for(let i=0; i < MAX_RAINDROPS; i++) {
+            let p = raindrops[i]; p.y += p.speedY * p.z * (dt * 60); p.x += windX * p.z * (dt * 60); 
+            if (p.y > viewHeight) { p.y = -20; p.x = Math.random() * viewWidth; } if (p.x > viewWidth) { p.x = Math.random() * viewWidth - viewWidth/2; p.y = Math.random() * viewHeight; }
+            let dx = (windX * p.z) * 0.5; let dy = (p.speedY * p.z) * 0.5; let dropStretch = 1 + (windX / 50); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - dx * dropStretch, p.y - dy * dropStretch);
+        } ctx.stroke();
+    }
+
+    function formatCost(num) {
+        if (!isFinite(num) || num < 0) return "MAX"; if (num < 1000) return Math.floor(num).toString();
+        if (num < 1000000) return (num / 1000).toFixed(0) + "K"; if (num < 1000000000) return (num / 1000000).toFixed(0) + "M";
+        if (num < 1000000000000) return (num / 1000000000).toFixed(0) + "B"; return num.toExponential(2);
+    }
+
+    function updateUI() {
+        uiDays.textContent = (state.elapsedSeconds / DAY_IN_SECONDS).toFixed(2); uiRpm.textContent = currentRPM < 1000 ? currentRPM.toFixed(2) : currentRPM.toExponential(3);
+        uiSpeed.textContent = currentSpeedKmh < 1000 ? currentSpeedKmh.toFixed(2) : currentSpeedKmh.toExponential(3); 
+        let currentSpeedMph = currentSpeedKmh * 0.621371;
+        uiSpeedMph.textContent = currentSpeedMph < 1000 ? currentSpeedMph.toFixed(2) : currentSpeedMph.toExponential(3);
+        uiDistance.textContent = state.realDistanceKm < 1000 ? state.realDistanceKm.toFixed(2) : state.realDistanceKm.toExponential(3);
+        uiGrowth.textContent = (state.growthRate * 100).toFixed(1); 
+        const availableDist = state.realDistanceKm - state.spentDistanceKm; let currentCost = 1000 * Math.pow(1000, state.boughtGrowth);
+        let maxAffordable = 0; let tempDist = availableDist; let tempCostForMax = currentCost;
+        while (tempDist >= tempCostForMax && isFinite(tempCostForMax) && maxAffordable < 100) { maxAffordable++; tempDist -= tempCostForMax; tempCostForMax *= 1000; }
+        if (maxAffordable > 0) { buyGrowthBtn.disabled = false; buyMaxBtn.disabled = false; buyGrowthBtn.textContent = `🌱 +1% T.T (-${formatCost(currentCost)}km)`; buyMaxBtn.textContent = `MAX (+${maxAffordable}%)`; } 
+        else { buyGrowthBtn.disabled = true; buyMaxBtn.disabled = true; buyGrowthBtn.textContent = `🌱 Thiếu ${formatCost(currentCost - availableDist)}km`; buyMaxBtn.textContent = `MAX T.T`; }
+        drawGauge(currentRPM);
+        drawClock();
+    }
+
+    function renderTrainViewport(realDt) {
+        const viewWidth = tCanvas.width; const viewHeight = tCanvas.height; ctx.clearRect(0, 0, viewWidth, viewHeight);
+        
+        let isNight = false;
+        let darkness = 0;
+
+        if (!isRaining) {
+            const simulatedTimeOfDay = (state.elapsedSeconds + realTimeOffset) % DAY_IN_SECONDS; 
+            const cycle = simulatedTimeOfDay / DAY_IN_SECONDS; 
+            darkness = Math.max(0, Math.min(1, Math.cos(cycle * Math.PI * 2) * 1.5));
+            
+            const skyR = Math.floor(135 * (1 - darkness) + 5 * darkness); 
+            const skyG = Math.floor(206 * (1 - darkness) + 10 * darkness); 
+            const skyB = Math.floor(235 * (1 - darkness) + 25 * darkness);
+            ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`; ctx.fillRect(0, 0, viewWidth, viewHeight);
+            
+            if (darkness > 0) { 
+                isNight = true;
+                ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; 
+                for (let i = 0; i < stars.length; i++) { ctx.fillRect(stars[i].x * viewWidth, stars[i].y * (viewHeight/2), stars[i].r * 2, stars[i].r * 2); } 
+            }
+            
+            const sunAngle = (0.75 - cycle) * Math.PI * 2 + Math.PI; const moonAngle = sunAngle + Math.PI;
+            const orbitRadius = viewWidth / 2 + 100; const orbitCx = viewWidth / 2; const orbitCy = viewHeight / 2 + 20;
+            const sunX = orbitCx + Math.cos(sunAngle) * orbitRadius; const sunY = orbitCy + Math.sin(sunAngle) * orbitRadius;
+            const moonX = orbitCx + Math.cos(moonAngle) * orbitRadius; const moonY = orbitCy + Math.sin(moonAngle) * orbitRadius;
+
+            if (sunY < viewHeight / 2 + 100) { let sunGrad = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 60); sunGrad.addColorStop(0, "rgba(255, 215, 0, 1)"); sunGrad.addColorStop(0.3, "rgba(255, 215, 0, 0.5)"); sunGrad.addColorStop(1, "rgba(255, 215, 0, 0)"); ctx.fillStyle = sunGrad; ctx.beginPath(); ctx.arc(sunX, sunY, 60, 0, Math.PI * 2); ctx.fill(); }
+            if (moonY < viewHeight / 2 + 100) { let moonGrad = ctx.createRadialGradient(moonX, moonY, 15, moonX, moonY, 50); moonGrad.addColorStop(0, `rgba(244, 246, 240, 1)`); moonGrad.addColorStop(0.5, `rgba(244, 246, 240, ${darkness * 0.8})`); moonGrad.addColorStop(1, `rgba(244, 246, 240, 0)`); ctx.fillStyle = moonGrad; ctx.beginPath(); ctx.arc(moonX, moonY, 50, 0, Math.PI * 2); ctx.fill(); }
+        } else {
+            ctx.fillStyle = `#4f5b66`; ctx.fillRect(0, 0, viewWidth, viewHeight);
+            darkness = 0.6;
+        }
+
+        if (cameraMode === 4) { 
+            ctx.fillStyle = "#81C784"; ctx.fillRect(0, viewHeight/2 - 20, viewWidth, viewHeight/2 + 20); ctx.fillStyle = "#78909c"; ctx.beginPath(); ctx.moveTo(viewWidth/2 - 30, viewHeight/2 - 20); ctx.lineTo(viewWidth/2 + 30, viewHeight/2 - 20); ctx.lineTo(viewWidth, viewHeight); ctx.lineTo(0, viewHeight); ctx.fill(); ctx.fillStyle = "#1a252f"; ctx.fillRect(0, viewHeight - 140, viewWidth, 140); ctx.fillStyle = '#0ff'; ctx.font = 'bold 20px monospace'; 
+            ctx.fillText('SPEED: ' + currentSpeedKmh.toExponential(2) + ' KM/H (' + (currentSpeedKmh * 0.621371).toExponential(2) + ' MPH)', 50, viewHeight - 80); 
+            if (isRaining && realDt) drawRainEffect(ctx, viewWidth, viewHeight, realDt); return;
+        }
+
+        let zoom = cameraMode === 3 ? 0.25 : 0.75; ctx.save(); ctx.scale(zoom, zoom);
+        const scaledWidth = viewWidth / zoom; const scaledHeight = viewHeight / zoom;
+        const groundY = scaledHeight - 85; const lowerGroundY = scaledHeight - 15; 
+        let safeDist = isFinite(state.distanceTraveled) ? state.distanceTraveled : 0; 
+        
+        if (cameraMode === 1 || cameraMode === 4) { camTcsCar = -state.locomotives; camTcsPixel = 0; } 
+        else if (cameraMode === 2) { camTcsCar = virtualCameraCar; camTcsPixel = virtualCameraPixel; } 
+        else if (cameraMode === 3) { camTcsCar = droneCar; camTcsPixel = dronePixel; } 
+        else if (cameraMode === 5) {
+            let distDiff = safeDist - capturedSafeDist; let distDiffCars = Math.floor(distDiff / CAR_WIDTH); let distDiffPixels = distDiff - (distDiffCars * CAR_WIDTH);
+            camTcsCar = capturedTcsCar + distDiffCars; camTcsPixel = capturedTcsPixel + distDiffPixels;
+            while (camTcsPixel >= CAR_WIDTH) { camTcsCar++; camTcsPixel -= CAR_WIDTH; } while (camTcsPixel < 0) { camTcsCar--; camTcsPixel += CAR_WIDTH; }
+        }
+        
+        drawSideEnvironment(safeDist, groundY, lowerGroundY, scaledWidth, scaledHeight); 
+        drawViaductBridge(safeDist, groundY, scaledWidth, scaledHeight);
+
+        function getScreenX(targetCar, targetPixel) { let carDiff = targetCar - camTcsCar; return trainStartX + (carDiff * CAR_WIDTH) + (targetPixel - camTcsPixel); }
+        
+        for (let l = 0; l < state.locomotives; l++) { 
+            const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); 
+            if (locoScreenX + LOCO_WIDTH > -200 && locoScreenX < scaledWidth + 200) drawLocomotive(locoScreenX, groundY); 
+        }
+
+        let offset = trainStartX - camTcsPixel;
+        let minCarDiff = Math.floor((-CAR_WIDTH - offset) / CAR_WIDTH);
+        let maxCarDiff = Math.ceil((scaledWidth - offset) / CAR_WIDTH);
+        
+        let startIdx = Math.max(0, camTcsCar + minCarDiff);
+        let endIdx = Math.min(TOTAL_CARS - 1, camTcsCar + maxCarDiff);
+
+        for (let i = startIdx; i <= endIdx; i++) { 
+            let carScreenX = getScreenX(i, 0); 
+            drawCar(carScreenX, groundY, i); 
+        }
+        
+        let rearLocoScreenX = getScreenX(TOTAL_CARS, 0);
+        if (rearLocoScreenX + LOCO_WIDTH > -200 && rearLocoScreenX < scaledWidth + 200) drawRearLocomotive(rearLocoScreenX, groundY);
+
+        if (isRaining) {
+            let waterLevel = groundY + 5; let effectiveSpeed = Math.min(300, currentSpeedKmh);
+            if (effectiveSpeed > 10) {
+                let trainStartScreen = getScreenX(0, -state.locomotives * LOCO_WIDTH); 
+                let trainEndScreen = rearLocoScreenX + LOCO_WIDTH; 
+                let splashStartX = Math.max(0, trainStartScreen); 
+                let splashEndX = Math.min(scaledWidth, trainEndScreen);
+                if (splashStartX < scaledWidth && splashEndX > 0) {
+                    ctx.fillStyle = "rgba(220, 240, 255, 0.5)"; for (let x = splashStartX; x <= splashEndX; x += 30) { let foamH = 2 + Math.random() * Math.min(10, effectiveSpeed/10); ctx.fillRect(x, waterLevel - foamH, 25, foamH); }
+                    if (trainStartScreen >= -200 && trainStartScreen <= scaledWidth + 200) {
+                        let splashSize = Math.min(100, effectiveSpeed * 0.8); ctx.fillStyle = "rgba(220, 240, 255, 0.6)"; ctx.beginPath(); ctx.moveTo(trainStartScreen + 100, waterLevel); ctx.quadraticCurveTo(trainStartScreen - splashSize * 0.5, waterLevel - splashSize * 0.8, trainStartScreen - splashSize * 1.5, waterLevel + 10); ctx.lineTo(trainStartScreen + 100, waterLevel + 10); ctx.fill();
+                        for(let p=0; p<8; p++) { ctx.beginPath(); ctx.arc(trainStartScreen - Math.random() * splashSize * 1.5, waterLevel - Math.random() * splashSize, Math.random() * 4 + 2, 0, Math.PI*2); ctx.fill(); }
+                    }
+                }
+            }
+            ctx.fillStyle = `rgba(50, 75, 90, ${darkness > 0.5 ? 0.95 : 0.85})`; ctx.beginPath(); ctx.moveTo(0, scaledHeight);
+            let time = state.elapsedSeconds; let baseWaveSpeed = time * 4; 
+            let waveOffset = getParallaxOffset(-0.1, 100000, 0, safeDist); let waveH = 2 + Math.min(6, effectiveSpeed / 30);
+            for(let x = 0; x <= scaledWidth; x += 20) { let y = waterLevel + Math.sin((x + waveOffset) * 0.05 + baseWaveSpeed) * waveH + Math.sin((x + waveOffset) * 0.02 - baseWaveSpeed * 0.5) * (waveH * 0.5); ctx.lineTo(x, y); }
+            ctx.lineTo(scaledWidth, waterLevel); ctx.lineTo(scaledWidth, scaledHeight); ctx.closePath(); ctx.fill();
+        }
+
+        if (darkness > 0.05) {
+            for (let l = 0; l < state.locomotives; l++) { 
+                const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); 
+                drawLocomotiveLights(locoScreenX, groundY, darkness, l === 0); 
+            }
+            if (rearLocoScreenX + LOCO_WIDTH > -200 && rearLocoScreenX < scaledWidth + 200) drawRearLocomotiveLights(rearLocoScreenX, groundY, darkness);
+        } 
+        ctx.restore(); 
+        if (isRaining && realDt) drawRainEffect(ctx, viewWidth, viewHeight, realDt);
+    }
+
+    function loop(timestamp) {
+        requestAnimationFrame(loop); if (!lastTime) lastTime = timestamp; const realDt = (timestamp - lastTime) / 1000; lastTime = timestamp;
+
+        if (state.running) {
+            const dt = realDt * timeMultiplier; state.elapsedSeconds += dt;
+            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01);
+            let currentMilestone = Math.floor((Math.log10(Math.max(1, currentRPM)) + 1e-9) / 2); if (!isFinite(currentMilestone)) currentMilestone = state.lastEvenMilestone;
+            if (currentMilestone > state.lastEvenMilestone) { state.lastEvenMilestone = currentMilestone; }
+
+            state.growthRate = currentBaseGrowthRate + (state.lastEvenMilestone * 0.001); if (!isFinite(state.growthRate)) state.growthRate = 1e300;
+            state.currentRPM *= Math.pow(1 + state.growthRate, dt / DAY_IN_SECONDS); if (!isFinite(state.currentRPM)) state.currentRPM = 1e300; currentRPM = state.currentRPM;
+
+            currentSpeedKmh = currentRPM / 6.3; if (!isFinite(currentSpeedKmh)) currentSpeedKmh = 1e300;
+            state.realDistanceKm += currentSpeedKmh * (dt / 3600); 
+            
+            let rotationDelta = (currentRPM * 2 * Math.PI / 60) * dt;
+            state.totalRotation += rotationDelta;
+            state.wheelAngle = -state.totalRotation % (Math.PI * 4);
+
+            let currentStep = Math.floor(state.totalRotation / (Math.PI * 2)); 
+            if (currentStep > state.lastChugStep) { playChug(currentSpeedKmh); state.lastChugStep = currentStep; }
+
+            const visualSpeed = currentSpeedKmh * 15; let distDelta = visualSpeed * dt; if (!isFinite(distDelta) || distDelta > 1e12) distDelta = 1e12; state.distanceTraveled += distDelta;
+
+            if (cameraMode === 3) { 
+                dronePixel += droneDirection * (2000 + currentSpeedKmh * 15) * realDt; 
+                while(dronePixel < 0) { droneCar--; dronePixel += CAR_WIDTH; } while(dronePixel >= CAR_WIDTH) { droneCar++; dronePixel -= CAR_WIDTH; }
+                if (droneCar >= TOTAL_CARS) { droneCar = TOTAL_CARS; dronePixel = 0; droneDirection = -1; } else if (droneCar < -state.locomotives) { droneCar = -state.locomotives; dronePixel = 0; droneDirection = 1; }
+            }
+            if (Math.random() < 0.05) save(); 
+        }
+        updateAudio(); updateUI(); renderTrainViewport(realDt);
+    }
+
+    function resizeCanvas() { tCanvas.width = scrollContainer.clientWidth; tCanvas.height = scrollContainer.clientHeight; }
+    window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+    function normalizeVirtualCamera() {
+        while (virtualCameraPixel < 0) { virtualCameraCar--; virtualCameraPixel += CAR_WIDTH; }
+        while (virtualCameraPixel >= CAR_WIDTH) { virtualCameraCar++; virtualCameraPixel -= CAR_WIDTH; }
+        if (virtualCameraCar < -state.locomotives) { virtualCameraCar = -state.locomotives; virtualCameraPixel = 0; }
+        if (virtualCameraCar >= TOTAL_CARS) { virtualCameraCar = TOTAL_CARS; virtualCameraPixel = 0; }
+    }
+
+    function updateSliderFromCamera() {
+        let currentPos = virtualCameraCar + state.locomotives + (virtualCameraPixel / CAR_WIDTH);
+        trainPositionSlider.value = currentPos / (state.locomotives + TOTAL_CARS);
+    }
+
+    let isDragging = false; let lastMouseX = 0;
+    scrollContainer.addEventListener('mousedown', (e) => { if (e.target === trainPositionSlider) return; if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } isDragging = true; lastMouseX = e.clientX; });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('mousemove', (e) => { 
+        if (isDragging && cameraMode === 2) { const deltaX = e.clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.clientX; } 
+    });
+    
+    scrollContainer.addEventListener('touchstart', (e) => { if (e.target === trainPositionSlider) return; if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } isDragging = true; lastMouseX = e.touches[0].clientX; }, {passive: true});
+    window.addEventListener('touchend', () => { isDragging = false; });
+    window.addEventListener('touchmove', (e) => { 
+        if (isDragging && cameraMode === 2) { const deltaX = e.touches[0].clientX - lastMouseX; virtualCameraPixel -= deltaX * 100; normalizeVirtualCamera(); updateSliderFromCamera(); lastMouseX = e.touches[0].clientX; } 
+    }, {passive: true});
+
+    scrollContainer.addEventListener('wheel', (e) => { 
+        if (cameraMode !== 2 && cameraMode !== 4) { cameraMode = 2; updateCameraButtons(); } 
+        virtualCameraPixel += (e.deltaY || e.deltaX) * 300; normalizeVirtualCamera(); updateSliderFromCamera(); e.preventDefault(); 
+    }, {passive: false});
+
+    document.getElementById('startBtn').onclick = () => { initAudio(); if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); state.running = true; lastTime = null; };
+    document.getElementById('pauseBtn').onclick = () => { state.running = false; updateAudio(); save(); };
+    document.getElementById('resetBtn').onclick = () => { 
+        state = { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 }; 
+        currentRPM = 1; currentSpeedKmh = 1 / 6.3; 
+        virtualCameraCar = -state.locomotives; virtualCameraPixel = 0; droneCar = -state.locomotives; dronePixel = 0; 
+        trainPositionSlider.value = 0; cameraMode = 1; updateCameraButtons(); save(); 
+    };
+    buyGrowthBtn.onclick = () => { let cost = 1000 * Math.pow(1000, state.boughtGrowth); if (state.realDistanceKm - state.spentDistanceKm >= cost) { state.spentDistanceKm += cost; state.boughtGrowth += 1; save(); updateUI(); } };
+    buyMaxBtn.onclick = () => { let cost = 1000 * Math.pow(1000, state.boughtGrowth); let availableDist = state.realDistanceKm - state.spentDistanceKm; let bought = 0; while (availableDist >= cost && isFinite(cost) && bought < 100) { state.spentDistanceKm += cost; availableDist -= cost; state.boughtGrowth += 1; bought++; cost *= 1000; } if (bought > 0) { save(); updateUI(); } };
+
+    trainPositionSlider.addEventListener('input', (e) => { 
+        if (cameraMode !== 2) { cameraMode = 2; updateCameraButtons(); } 
+        let val = parseFloat(e.target.value); let targetTotalCars = val * (state.locomotives + TOTAL_CARS);
+        virtualCameraCar = Math.floor(targetTotalCars) - state.locomotives; virtualCameraPixel = (targetTotalCars - Math.floor(targetTotalCars)) * CAR_WIDTH;
+        normalizeVirtualCamera();
+    });
+
+    const cam1Btn = document.getElementById('cam1Btn'); const cam2Btn = document.getElementById('cam2Btn'); const cam3Btn = document.getElementById('cam3Btn'); const cam4Btn = document.getElementById('cam4Btn'); const cam5Btn = document.getElementById('cam5Btn');
+    function updateCameraButtons() { cam1Btn.className = cameraMode === 1 ? 'cam-active' : 'cam-inactive'; cam2Btn.className = cameraMode === 2 ? 'cam-active' : 'cam-inactive'; cam3Btn.className = cameraMode === 3 ? 'cam-active' : 'cam-inactive'; cam4Btn.className = cameraMode === 4 ? 'cam-active' : 'cam-inactive'; cam5Btn.className = cameraMode === 5 ? 'cam-active' : 'cam-inactive'; }
+    cam1Btn.onclick = () => { cameraMode = 1; updateCameraButtons(); }; 
+    cam2Btn.onclick = () => { if (cameraMode !== 2) { virtualCameraCar = camTcsCar; virtualCameraPixel = camTcsPixel; cameraMode = 2; updateCameraButtons(); updateSliderFromCamera(); } }; 
+    cam3Btn.onclick = () => { if (cameraMode !== 3) { droneCar = camTcsCar; dronePixel = camTcsPixel; cameraMode = 3; updateCameraButtons(); } }; 
+    cam4Btn.onclick = () => { cameraMode = 4; updateCameraButtons(); };
+    cam5Btn.onclick = () => { if (cameraMode !== 5) { capturedTcsCar = camTcsCar; capturedTcsPixel = camTcsPixel; capturedSafeDist = state.distanceTraveled || 0; cameraMode = 5; updateCameraButtons(); } };
+
+    timeSlider.oninput = (e) => { timeMultiplier = Math.pow(10, parseFloat(e.target.value)); timeMultiplierText.textContent = timeMultiplier < 1000 ? timeMultiplier.toFixed(0) + "x" : (timeMultiplier/1000).toFixed(1) + "Kx"; };
+    document.getElementById('weatherBtn').onclick = () => { isRaining = !isRaining; updateAudio(); };
+    document.getElementById('hornBtn').onmousedown = playHorn; document.getElementById('hornBtn').onmouseup = stopHorn; document.getElementById('hornBtn').onmouseleave = stopHorn;
+    document.getElementById('hornBtn').ontouchstart = (e) => { e.preventDefault(); playHorn(); }; document.getElementById('hornBtn').ontouchend = (e) => { e.preventDefault(); stopHorn(); };
+
+    window.onload = function () { requestAnimationFrame(loop); }
+</script>
+</body>
+</html>
