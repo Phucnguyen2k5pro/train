@@ -195,8 +195,8 @@
         { name: "Shandong", bg: "#cc0000", text: "#ffcc00" }, { name: "China Gold", bg: "#cc0000", text: "#ffd700" }, { name: "Zhongjin", bg: "#111111", text: "#ffcc00" }, { name: "Hunan Gold", bg: "#1a1a1a", text: "#f1c40f" }, { name: "Chifeng", bg: "#222222", text: "#e5c158" }, { name: "Sumitomo", bg: "#000000", text: "#c0c0c0" }, { name: "Mitsubishi", bg: "#2c3e50", text: "#c0c0c0" }, { name: "Tanaka", bg: "#1e1e1e", text: "#e5e4e2" }, { name: "Heraeus", bg: "#0a0a0a", text: "#e5e4e2" }, { name: "Valcambi", bg: "#111111", text: "#f39c12" }
     ];
 
-    let state = JSON.parse(localStorage.getItem("trainSave84q")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
-    const save = () => localStorage.setItem("trainSave84q", JSON.stringify(state));
+    let state = JSON.parse(localStorage.getItem("trainSave84q_fixed")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
+    const save = () => localStorage.setItem("trainSave84q_fixed", JSON.stringify(state));
 
     if (state.realDistanceKm === undefined) state.realDistanceKm = 0; if (state.spentDistanceKm === undefined) state.spentDistanceKm = 0; if (state.locomotives === undefined) state.locomotives = 1; if (state.boughtGrowth === undefined) state.boughtGrowth = 0; if (state.lastEvenMilestone === undefined) state.lastEvenMilestone = 0; if (state.lastJoint === undefined) state.lastJoint = 0; if (state.totalRotation === undefined) state.totalRotation = 0; if (state.lastChugStep === undefined) state.lastChugStep = 0;
     if (state.currentRPM === undefined) state.currentRPM = Math.pow(1 + BASE_GROWTH_RATE, state.elapsedSeconds / DAY_IN_SECONDS);
@@ -258,7 +258,7 @@
 
     function getParallaxOffset(multiplier, modulo, additionalOffset = 0, safeDist = 0) {
         let m100 = Math.round(multiplier * 100); let bigMod = BigInt(Math.round(modulo * 100));
-        let t1 = Number((BigInt(-camTcsCar) * 3000n * BigInt(m100)) % bigMod) / 100; let t2 = (-camTcsPixel * multiplier) % modulo; let t3 = (safeDist * multiplier) % modulo;
+        let t1 = Number((BigInt(-Math.floor(camTcsCar)) * 3000n * BigInt(m100)) % bigMod) / 100; let t2 = (-camTcsPixel * multiplier) % modulo; let t3 = (safeDist * multiplier) % modulo;
         let res = (t1 + t2 + t3 + additionalOffset) % modulo; if (res < 0) res += modulo; return res;
     }
 
@@ -386,7 +386,6 @@
         ctx.fillStyle = platGrad;
         ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, cy, w, CONT_HEIGHT_LOCAL, 8); ctx.fill(); } else { ctx.fillRect(10, cy, w, CONT_HEIGHT_LOCAL); }
 
-        // Mật độ 6 màn hình chuẩn 16:9, có khoảng trống 2 đầu
         const numSlots = 6;
         const slotH = CONT_HEIGHT_LOCAL - 20; 
         const slotW = slotH * (16 / 9);
@@ -409,7 +408,6 @@
                     const slotAspect = 16 / 9;
                     let renderW, renderH, offsetX, offsetY;
 
-                    // Chế độ LETTERBOX: Không cắt, nằm vừa trong khung, lấp đầy phần dư bằng đen
                     if (imgAspect > slotAspect) {
                         renderW = slotW;
                         renderH = renderW / imgAspect;
@@ -536,64 +534,26 @@
     }
 
     function drawHand(ctx, pos, length, width, color) {
-        ctx.beginPath();
-        ctx.lineWidth = width;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = color;
-        ctx.moveTo(0,0);
-        ctx.rotate(pos);
-        ctx.lineTo(0, -length);
-        ctx.stroke();
-        ctx.rotate(-pos);
+        ctx.beginPath(); ctx.lineWidth = width; ctx.lineCap = "round"; ctx.strokeStyle = color;
+        ctx.moveTo(0,0); ctx.rotate(pos); ctx.lineTo(0, -length); ctx.stroke(); ctx.rotate(-pos);
     }
 
     function drawClock() {
-        const width = clockCanvas.width;
-        const height = clockCanvas.height;
-        const radius = width / 2;
+        const width = clockCanvas.width; const height = clockCanvas.height; const radius = width / 2;
         clockCtx.clearRect(0, 0, width, height);
-
         const simulatedSecondsTotal = state.elapsedSeconds + realTimeOffset;
-        const hours = (Math.floor(simulatedSecondsTotal / 3600) % 24);
-        const minutes = (Math.floor(simulatedSecondsTotal / 60) % 60);
-        const seconds = (simulatedSecondsTotal % 60);
-
-        clockCtx.save();
-        clockCtx.translate(radius, radius);
-
-        clockCtx.beginPath();
-        clockCtx.arc(0, 0, radius - 2, 0, 2 * Math.PI);
-        clockCtx.fillStyle = 'transparent';
-        clockCtx.fill();
-
+        const hours = (Math.floor(simulatedSecondsTotal / 3600) % 24); const minutes = (Math.floor(simulatedSecondsTotal / 60) % 60); const seconds = (simulatedSecondsTotal % 60);
+        clockCtx.save(); clockCtx.translate(radius, radius);
+        clockCtx.beginPath(); clockCtx.arc(0, 0, radius - 2, 0, 2 * Math.PI); clockCtx.fillStyle = 'transparent'; clockCtx.fill();
         for (let num = 1; num <= 12; num++) {
-            let ang = num * Math.PI / 6;
-            clockCtx.rotate(ang);
-            clockCtx.translate(0, -radius + 6);
-            clockCtx.rotate(-ang);
-            clockCtx.fillStyle = '#f1c40f';
-            clockCtx.beginPath();
-            clockCtx.arc(0, 0, 1.5, 0, 2 * Math.PI);
-            clockCtx.fill();
-            clockCtx.rotate(ang);
-            clockCtx.translate(0, radius - 6);
-            clockCtx.rotate(-ang);
+            let ang = num * Math.PI / 6; clockCtx.rotate(ang); clockCtx.translate(0, -radius + 6); clockCtx.rotate(-ang);
+            clockCtx.fillStyle = '#f1c40f'; clockCtx.beginPath(); clockCtx.arc(0, 0, 1.5, 0, 2 * Math.PI); clockCtx.fill();
+            clockCtx.rotate(ang); clockCtx.translate(0, radius - 6); clockCtx.rotate(-ang);
         }
-
-        clockCtx.beginPath();
-        clockCtx.arc(0, 0, 2, 0, 2 * Math.PI);
-        clockCtx.fillStyle = '#fff';
-        clockCtx.fill();
-
-        let hourAngle = (hours * Math.PI / 6) + (minutes * Math.PI / (6 * 60)) + (seconds * Math.PI / (360 * 60));
-        drawHand(clockCtx, hourAngle, radius * 0.45, 3, '#fff');
-
-        let minuteAngle = (minutes * Math.PI / 30) + (seconds * Math.PI / (30 * 60));
-        drawHand(clockCtx, minuteAngle, radius * 0.65, 2, '#fff');
-
-        let secondAngle = (seconds * Math.PI / 30);
-        drawHand(clockCtx, secondAngle, radius * 0.8, 1, '#e74c3c');
-
+        clockCtx.beginPath(); clockCtx.arc(0, 0, 2, 0, 2 * Math.PI); clockCtx.fillStyle = '#fff'; clockCtx.fill();
+        let hourAngle = (hours * Math.PI / 6) + (minutes * Math.PI / (6 * 60)) + (seconds * Math.PI / (360 * 60)); drawHand(clockCtx, hourAngle, radius * 0.45, 3, '#fff');
+        let minuteAngle = (minutes * Math.PI / 30) + (seconds * Math.PI / (30 * 60)); drawHand(clockCtx, minuteAngle, radius * 0.65, 2, '#fff');
+        let secondAngle = (seconds * Math.PI / 30); drawHand(clockCtx, secondAngle, radius * 0.8, 1, '#e74c3c');
         clockCtx.restore();
     }
 
@@ -632,8 +592,7 @@
     function renderTrainViewport(realDt) {
         const viewWidth = tCanvas.width; const viewHeight = tCanvas.height; ctx.clearRect(0, 0, viewWidth, viewHeight);
         
-        let isNight = false;
-        let darkness = 0;
+        let isNight = false; let darkness = 0;
 
         if (!isRaining) {
             const simulatedTimeOfDay = (state.elapsedSeconds + realTimeOffset) % DAY_IN_SECONDS; 
@@ -646,8 +605,7 @@
             ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`; ctx.fillRect(0, 0, viewWidth, viewHeight);
             
             if (darkness > 0) { 
-                isNight = true;
-                ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; 
+                isNight = true; ctx.fillStyle = `rgba(255, 255, 255, ${darkness})`; 
                 for (let i = 0; i < stars.length; i++) { ctx.fillRect(stars[i].x * viewWidth, stars[i].y * (viewHeight/2), stars[i].r * 2, stars[i].r * 2); } 
             }
             
@@ -686,33 +644,31 @@
         drawSideEnvironment(safeDist, groundY, lowerGroundY, scaledWidth, scaledHeight); 
         drawViaductBridge(safeDist, groundY, scaledWidth, scaledHeight);
 
-        function getScreenX(targetCar, targetPixel) { let carDiff = targetCar - camTcsCar; return trainStartX + (carDiff * CAR_WIDTH) + (targetPixel - camTcsPixel); }
-        
-        for (let l = 0; l < state.locomotives; l++) { 
-            const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); 
-            if (locoScreenX + LOCO_WIDTH > -200 && locoScreenX < scaledWidth + 200) drawLocomotive(locoScreenX, groundY); 
-        }
-
         let offset = trainStartX - camTcsPixel;
-        let minCarDiff = Math.floor((-CAR_WIDTH - offset) / CAR_WIDTH);
-        let maxCarDiff = Math.ceil((scaledWidth - offset) / CAR_WIDTH);
+        // Sử dụng thuật toán culling tương đối (Relative Diff Loop) để chống lag 100%
+        let minCarDiff = Math.floor((-CAR_WIDTH - offset) / CAR_WIDTH) - 2;
+        let maxCarDiff = Math.ceil((scaledWidth - offset) / CAR_WIDTH) + 2;
         
-        let startIdx = Math.max(0, camTcsCar + minCarDiff);
-        let endIdx = Math.min(TOTAL_CARS - 1, camTcsCar + maxCarDiff);
+        // Căn giới hạn nước bắn (Splash)
+        let trainStartScreen = trainStartX + ((-state.locomotives - camTcsCar) * CAR_WIDTH) - camTcsPixel;
+        let trainEndScreen = trainStartX + ((TOTAL_CARS - camTcsCar) * CAR_WIDTH) - camTcsPixel + LOCO_WIDTH;
 
-        for (let i = startIdx; i <= endIdx; i++) { 
-            let carScreenX = getScreenX(i, 0); 
-            drawCar(carScreenX, groundY, i); 
+        for (let diff = minCarDiff; diff <= maxCarDiff; diff++) {
+            let screenX = trainStartX + (diff * CAR_WIDTH) - camTcsPixel;
+            let absoluteIndex = camTcsCar + diff; // Có thể mất chính xác ở phần ngàn, nhưng đảm bảo vị trí render hoàn hảo
+            
+            if (absoluteIndex >= -state.locomotives && absoluteIndex < 0) {
+                drawLocomotive(screenX, groundY);
+            } else if (absoluteIndex >= 0 && absoluteIndex < TOTAL_CARS) {
+                drawCar(screenX, groundY, absoluteIndex);
+            } else if (absoluteIndex === TOTAL_CARS) {
+                drawRearLocomotive(screenX, groundY);
+            }
         }
-        
-        let rearLocoScreenX = getScreenX(TOTAL_CARS, 0);
-        if (rearLocoScreenX + LOCO_WIDTH > -200 && rearLocoScreenX < scaledWidth + 200) drawRearLocomotive(rearLocoScreenX, groundY);
 
         if (isRaining) {
             let waterLevel = groundY + 5; let effectiveSpeed = Math.min(300, currentSpeedKmh);
             if (effectiveSpeed > 10) {
-                let trainStartScreen = getScreenX(0, -state.locomotives * LOCO_WIDTH); 
-                let trainEndScreen = rearLocoScreenX + LOCO_WIDTH; 
                 let splashStartX = Math.max(0, trainStartScreen); 
                 let splashEndX = Math.min(scaledWidth, trainEndScreen);
                 if (splashStartX < scaledWidth && splashEndX > 0) {
@@ -731,11 +687,15 @@
         }
 
         if (darkness > 0.05) {
-            for (let l = 0; l < state.locomotives; l++) { 
-                const locoScreenX = getScreenX(0, (-state.locomotives + l) * LOCO_WIDTH); 
-                drawLocomotiveLights(locoScreenX, groundY, darkness, l === 0); 
+            for (let diff = minCarDiff; diff <= maxCarDiff; diff++) {
+                let screenX = trainStartX + (diff * CAR_WIDTH) - camTcsPixel;
+                let absoluteIndex = camTcsCar + diff;
+                if (absoluteIndex >= -state.locomotives && absoluteIndex < 0) {
+                    drawLocomotiveLights(screenX, groundY, darkness, absoluteIndex === -state.locomotives); 
+                } else if (absoluteIndex === TOTAL_CARS) {
+                    drawRearLocomotiveLights(screenX, groundY, darkness);
+                }
             }
-            if (rearLocoScreenX + LOCO_WIDTH > -200 && rearLocoScreenX < scaledWidth + 200) drawRearLocomotiveLights(rearLocoScreenX, groundY, darkness);
         } 
         ctx.restore(); 
         if (isRaining && realDt) drawRainEffect(ctx, viewWidth, viewHeight, realDt);
