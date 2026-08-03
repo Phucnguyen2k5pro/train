@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mô phỏng Tàu hỏa Bạch Kim - 798 Triệu Tỷ Toa</title>
+    <title>Mô phỏng Tàu hỏa Bạch Kim - 1260 Triệu Tỷ Toa</title>
     <style>
         :root { --bg-color: #121212; --text-color: #e0e0e0; --accent: #ff69b4; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: relative; touch-action: none; }
@@ -65,14 +65,14 @@
 
     <div class="ui-panel">
         <div class="panel-header">
-            <h1>🚂 Siêu Tàu 798 Triệu Tỷ Toa (Logistics, Tech, Energy, Metals, Blank, Matson, Kỷ Yếu) <br><span class="subtitle">(Các phân khu 19 Triệu Tỷ Toa | Riêng Kỷ Yếu 684 Triệu Tỷ Toa)</span></h1>
+            <h1>🚂 Siêu Tàu 1.260 Triệu Tỷ Toa (Logistics, Tech, Energy, Metals, Blank, Matson, Kỷ Yếu) <br><span class="subtitle">(Các phân khu 30 Triệu Tỷ Toa | Riêng Kỷ Yếu 1.080 Triệu Tỷ Toa)</span></h1>
             <div class="stats-grid">
                 <div>⏱ T.Gian: <span class="stat-value" id="ui-days">0</span>d</div>
                 <div>🔄 Vòng: <span class="stat-value" id="ui-rpm">1.00</span></div>
                 <div>📈 Tốc: <span class="stat-value" id="ui-speed">0.19</span>km/h (<span class="stat-value" id="ui-speed-mph" style="color: #f39c12; font-size: 11px;">0.12</span>mph)</div>
                 <div>🌱 T.Trưởng: <span class="stat-value" id="ui-growth">18.0</span>%</div>
                 <div>📍 Q.Đường: <span class="stat-value" id="ui-distance">0.00</span>km</div>
-                <div>⚖️ T.Trọng: <span class="stat-value">115.710.000.000.000.000.000.000</span> T</div>
+                <div>⚖️ T.Trọng: <span class="stat-value">182.700.000.000.000.000.000.000</span> T</div>
             </div>
         </div>
 
@@ -111,11 +111,11 @@
     </div>
 
 <script>
-    const QTY_OTHER_BIG = 19000000000000000n; 
-    const QTY_KYYEU_BIG = 684000000000000000n; 
+    const QTY_OTHER_BIG = 30000000000000000n; // 30 Triệu Tỷ toa
+    const QTY_KYYEU_BIG = 1080000000000000000n; // 1080 Triệu Tỷ toa
     const TENDER_CARS = 1n;
     
-    // TỔNG SỐ TOA: 798 Triệu Tỷ Toa
+    // TỔNG SỐ TOA: 1.260 Triệu Tỷ Toa
     const TOTAL_CARS_BIG = TENDER_CARS + (QTY_OTHER_BIG * 6n) + QTY_KYYEU_BIG; 
 
     const LOCO_WIDTH = 3000; 
@@ -123,7 +123,7 @@
     const LOCO_TOP_Y = -325; 
     const WHEEL_RADIUS = 16;
     const DAY_IN_SECONDS = 86400;
-    const BASE_GROWTH_RATE = 0.1; 
+    const BASE_GROWTH_RATE = 0.18; 
 
     function formatBigInt(bigIntNum) {
         return bigIntNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -200,8 +200,8 @@
         { name: "Shandong", bg: "#cc0000", text: "#ffcc00" }, { name: "China Gold", bg: "#cc0000", text: "#ffd700" }, { name: "Zhongjin", bg: "#111111", text: "#ffcc00" }, { name: "Hunan Gold", bg: "#1a1a1a", text: "#f1c40f" }, { name: "Chifeng", bg: "#222222", text: "#e5c158" }, { name: "Sumitomo", bg: "#000000", text: "#c0c0c0" }, { name: "Mitsubishi", bg: "#2c3e50", text: "#c0c0c0" }, { name: "Tanaka", bg: "#1e1e1e", text: "#e5e4e2" }, { name: "Heraeus", bg: "#0a0a0a", text: "#e5e4e2" }, { name: "Valcambi", bg: "#111111", text: "#f39c12" }
     ];
 
-    let state = JSON.parse(localStorage.getItem("trainSave798q_v2")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
-    const save = () => localStorage.setItem("trainSave798q_v2", JSON.stringify(state));
+    let state = JSON.parse(localStorage.getItem("trainSave1260q")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
+    const save = () => localStorage.setItem("trainSave1260q", JSON.stringify(state));
 
     if (state.realDistanceKm === undefined) state.realDistanceKm = 0; if (state.spentDistanceKm === undefined) state.spentDistanceKm = 0; if (state.locomotives === undefined) state.locomotives = 1; if (state.boughtGrowth === undefined) state.boughtGrowth = 0; if (state.lastEvenMilestone === undefined) state.lastEvenMilestone = 0; if (state.lastJoint === undefined) state.lastJoint = 0; if (state.totalRotation === undefined) state.totalRotation = 0; if (state.lastChugStep === undefined) state.lastChugStep = 0;
     if (state.currentRPM === undefined) state.currentRPM = Math.pow(1 + BASE_GROWTH_RATE, state.elapsedSeconds / DAY_IN_SECONDS);
@@ -212,7 +212,7 @@
     let timeMultiplier = 1; let lastTime = null; let currentRPM = state.currentRPM; let currentSpeedKmh = currentRPM / 6.3;
     let cameraMode = 1; 
     
-    // TỌA ĐỘ VỊ TRÍ CAMERA BIGINT
+    // TỌA ĐỘ VỊ TRÍ CAMERA BIGINT CHỐNG TRÀN BỘ NHỚ
     let virtualCameraCar = -BigInt(state.locomotives); 
     let virtualCameraPixel = 0; 
     let droneCar = -BigInt(state.locomotives); 
@@ -775,11 +775,11 @@
 
         if (state.running) {
             const dt = realDt * timeMultiplier; state.elapsedSeconds += dt;
-            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01); // Cập nhật mua tay +1%
+            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01); // Mua tay +1%
             let currentMilestone = Math.floor((Math.log10(Math.max(1, currentRPM)) + 1e-9) / 2); if (!isFinite(currentMilestone)) currentMilestone = state.lastEvenMilestone;
             if (currentMilestone > state.lastEvenMilestone) { state.lastEvenMilestone = currentMilestone; }
 
-            // Cập nhật thưởng milestone tự động +0.5% thay vì +0.1%
+            // Thưởng milestone tự động +0.5%
             state.growthRate = currentBaseGrowthRate + (state.lastEvenMilestone * 0.005); if (!isFinite(state.growthRate)) state.growthRate = 1e300;
             state.currentRPM *= Math.pow(1 + state.growthRate, dt / DAY_IN_SECONDS); if (!isFinite(state.currentRPM)) state.currentRPM = 1e300; currentRPM = state.currentRPM;
 
