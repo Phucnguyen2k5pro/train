@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mô phỏng Tàu hỏa Bạch Kim - 1260 Triệu Tỷ Toa</title>
+    <title>Mô phỏng Tàu hỏa Bạch Kim - 25.637.600 Triệu Tỷ Toa (Chống Lag)</title>
     <style>
         :root { --bg-color: #121212; --text-color: #e0e0e0; --accent: #ff69b4; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: relative; touch-action: none; }
@@ -65,14 +65,14 @@
 
     <div class="ui-panel">
         <div class="panel-header">
-            <h1>🚂 Siêu Tàu 1.260 Triệu Tỷ Toa (Logistics, Tech, Energy, Metals, Blank, Matson, Kỷ Yếu) <br><span class="subtitle">(Các phân khu 30 Triệu Tỷ Toa | Riêng Kỷ Yếu 1.080 Triệu Tỷ Toa)</span></h1>
+            <h1>🚂 Siêu Tàu 25.637.600 Triệu Tỷ Toa (25.637 Tỷ Tỷ Toa) <br><span class="subtitle">(12.643.200 T.Tỷ Kỷ Yếu Đầu + 400 Tập đoàn x 878 Triệu Tỷ Toa + 12.643.200 T.Tỷ Kỷ Yếu Đuôi)</span></h1>
             <div class="stats-grid">
                 <div>⏱ T.Gian: <span class="stat-value" id="ui-days">0</span>d</div>
                 <div>🔄 Vòng: <span class="stat-value" id="ui-rpm">1.00</span></div>
                 <div>📈 Tốc: <span class="stat-value" id="ui-speed">0.19</span>km/h (<span class="stat-value" id="ui-speed-mph" style="color: #f39c12; font-size: 11px;">0.12</span>mph)</div>
                 <div>🌱 T.Trưởng: <span class="stat-value" id="ui-growth">18.0</span>%</div>
                 <div>📍 Q.Đường: <span class="stat-value" id="ui-distance">0.00</span>km</div>
-                <div>⚖️ T.Trọng: <span class="stat-value">182.700.000.000.000.000.000.000</span> T</div>
+                <div>⚖️ T.Trọng: <span class="stat-value">3.717.452.000.000.000.000.000.000.000</span> T</div>
             </div>
         </div>
 
@@ -104,19 +104,21 @@
                 <button id="cam5Btn" class="cam-inactive">🎥 C5 (Tĩnh)</button>
                 <button class="buy-max" id="buyMaxBtn" disabled>MAX T.T</button>
 
-                <label for="imageUpload169" class="horn" style="background: #e91e63; margin: 0; color: white;">📸 Tải Ảnh Kỷ Yếu (16:9)</label>
+                <label for="imageUpload169" class="horn" id="uploadLabel" style="background: #e91e63; margin: 0; color: white;">📸 Tải Ảnh Kỷ Yếu</label>
                 <input type="file" id="imageUpload169" multiple accept="image/*" style="display: none;">
             </div>
         </div>
     </div>
 
 <script>
-    const QTY_OTHER_BIG = 30000000000000000n; // 30 Triệu Tỷ toa
-    const QTY_KYYEU_BIG = 1080000000000000000n; // 1080 Triệu Tỷ toa
+    const QTY_PER_BRAND = 878000000000000000n; // 878 Triệu Tỷ toa
+    const QTY_KYYEU_FRONT_BIG = 12643200000000000000000n; // 12.643.200 Triệu Tỷ toa Kỷ Yếu
+    const QTY_KYYEU_REAR_BIG  = 12643200000000000000000n; // 12.643.200 Triệu Tỷ toa Kỷ Yếu
     const TENDER_CARS = 1n;
     
-    // TỔNG SỐ TOA: 1.260 Triệu Tỷ Toa
-    const TOTAL_CARS_BIG = TENDER_CARS + (QTY_OTHER_BIG * 6n) + QTY_KYYEU_BIG; 
+    // TỔNG SỐ TOA: 25.637.600 Triệu Tỷ Toa (25.637 Tỷ Tỷ Toa)
+    const TOTAL_CORP_CARS = QTY_PER_BRAND * 400n;
+    const TOTAL_CARS_BIG = TENDER_CARS + QTY_KYYEU_FRONT_BIG + TOTAL_CORP_CARS + QTY_KYYEU_REAR_BIG; 
 
     const LOCO_WIDTH = 3000; 
     const CAR_WIDTH = 3000; 
@@ -135,17 +137,71 @@
     defaultImg.src = defaultImageUrl;
     kyYeuImages169.push(defaultImg);
 
-    document.getElementById('imageUpload169').addEventListener('change', function(e) {
+    document.getElementById('imageUpload169').addEventListener('change', async function(e) {
         const files = e.target.files;
         if (!files || files.length === 0) return;
-        kyYeuImages169 = [];
+        
+        const uploadLabel = document.getElementById('uploadLabel');
+        const originalText = uploadLabel.innerText;
+        uploadLabel.innerText = "⏳ Đang tối ưu ảnh...";
+        uploadLabel.style.pointerEvents = "none";
+        uploadLabel.style.opacity = "0.7";
+
+        let newOptimizedImages = [];
+        
+        // Kích thước tối đa hiển thị thực tế trên toa (giúp siêu tiết kiệm RAM)
+        const MAX_RENDER_W = 480; 
+        const MAX_RENDER_H = 270;
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const url = URL.createObjectURL(file);
-            const img = new Image();
-            img.src = url;
-            kyYeuImages169.push(img);
+            
+            await new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    let tw = img.width;
+                    let th = img.height;
+                    const aspect = tw / th;
+
+                    // Nếu ảnh quá bự, ta resize bằng Canvas ngay lập tức
+                    if (tw > MAX_RENDER_W || th > MAX_RENDER_H) {
+                        if (aspect > 16/9) {
+                            tw = MAX_RENDER_W;
+                            th = tw / aspect;
+                        } else {
+                            th = MAX_RENDER_H;
+                            tw = th * aspect;
+                        }
+                    }
+
+                    // Dùng Offscreen Canvas để ép nén ảnh
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = tw;
+                    tempCanvas.height = th;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, tw, th);
+
+                    // Tạo thẻ Image mới lưu dưới dạng JPEG nén để tiết kiệm RAM tối đa
+                    const optImg = new Image();
+                    optImg.onload = () => {
+                        newOptimizedImages.push(optImg);
+                        URL.revokeObjectURL(url); // Giải phóng RAM cho ảnh gốc
+                        resolve();
+                    };
+                    optImg.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                    optImg.src = tempCanvas.toDataURL('image/jpeg', 0.85); 
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                img.src = url;
+            });
         }
+
+        kyYeuImages169 = newOptimizedImages; // Cập nhật danh sách ảnh siêu nhẹ
+        
+        uploadLabel.innerText = originalText;
+        uploadLabel.style.pointerEvents = "auto";
+        uploadLabel.style.opacity = "1";
     });
 
     const logisticsBrands = [
@@ -161,19 +217,6 @@
         { name: "Blue Water", bg: "#0055a5", text: "#ffffff" }, { name: "Turkon", bg: "#0055a5", text: "#ffffff" }, { name: "Admiral", bg: "#003399", text: "#ffffff" }, { name: "Akkon", bg: "#003399", text: "#ffffff" }, { name: "Medkon", bg: "#c0392b", text: "#ffffff" }, { name: "dynamic", bg: "#0055a5", text: "#ffffff" }, { name: "New Golden", bg: "#cc0000", text: "#ffffff" }, { name: "Transworld", bg: "#003399", text: "#ffffff" }, { name: "Sharaf", bg: "#1a1a1a", text: "#ffffff" }, { name: "Hapag-X", bg: "#ff3300", text: "#ffffff" }
     ];
 
-    const techBrands = [
-        { name: "Microsoft", bg: "#00a4ef", text: "#ffffff" }, { name: "Apple", bg: "#f5f5f7", text: "#111111" }, { name: "NVIDIA", bg: "#76b900", text: "#000000" }, { name: "Google", bg: "#4285F4", text: "#ffffff" }, { name: "Amazon", bg: "#232F3E", text: "#FF9900" }, { name: "Meta", bg: "#0668E1", text: "#ffffff" }, { name: "TSMC", bg: "#cc0000", text: "#ffffff" }, { name: "Tesla", bg: "#e31937", text: "#ffffff" }, { name: "Broadcom", bg: "#cc0000", text: "#ffffff" }, { name: "ASML", bg: "#001a6e", text: "#ffffff" },
-        { name: "Samsung", bg: "#1428A0", text: "#ffffff" }, { name: "Tencent", bg: "#0052d9", text: "#ffffff" }, { name: "Oracle", bg: "#c74634", text: "#ffffff" }, { name: "AMD", bg: "#000000", text: "#ed1c24" }, { name: "Qualcomm", bg: "#3253ba", text: "#ffffff" }, { name: "Intel", bg: "#0068B5", text: "#ffffff" }, { name: "Adobe", bg: "#ff0000", text: "#ffffff" }, { name: "Salesforce", bg: "#00a1e0", text: "#ffffff" }, { name: "Cisco", bg: "#00bceb", text: "#000000" }, { name: "SAP", bg: "#008fd3", text: "#ffffff" },
-        { name: "Netflix", bg: "#E50914", text: "#ffffff" }, { name: "IBM", bg: "#0530ad", text: "#ffffff" }, { name: "Texas Inst.", bg: "#cc0000", text: "#ffffff" }, { name: "Alibaba", bg: "#FF6A00", text: "#ffffff" }, { name: "Sony", bg: "#000000", text: "#ffffff" }, { name: "Micron", bg: "#003359", text: "#ffffff" }, { name: "Applied Mat.", bg: "#005baa", text: "#ffffff" }, { name: "ServiceNow", bg: "#81b532", text: "#ffffff" }, { name: "Lam Res.", bg: "#00549f", text: "#ffffff" }, { name: "Tokyo Elec.", bg: "#0033a0", text: "#ffffff" },
-        { name: "Intuit", bg: "#0077c5", text: "#ffffff" }, { name: "Uber", bg: "#000000", text: "#ffffff" }, { name: "Synopsys", bg: "#512c75", text: "#ffffff" }, { name: "Cadence", bg: "#000000", text: "#ffffff" }, { name: "Analog Dev", bg: "#00528e", text: "#ffffff" }, { name: "Palo Alto", bg: "#f26622", text: "#ffffff" }, { name: "Schneider", bg: "#3dcd58", text: "#ffffff" }, { name: "Booking", bg: "#003580", text: "#ffffff" }, { name: "Keyence", bg: "#000000", text: "#ffffff" }, { name: "NXP", bg: "#f68b1f", text: "#ffffff" },
-        { name: "Marvell", bg: "#000000", text: "#ffffff" }, { name: "Workday", bg: "#005cb9", text: "#ffffff" }, { name: "Autodesk", bg: "#000000", text: "#ffffff" }, { name: "Snowflake", bg: "#29b5e8", text: "#ffffff" }, { name: "MercadoLibre", bg: "#ffe600", text: "#2d3277" }, { name: "Infosys", bg: "#007cc3", text: "#ffffff" }, { name: "Meituan", bg: "#ffc300", text: "#000000" }, { name: "Baidu", bg: "#2932e1", text: "#ffffff" }, { name: "NetEase", bg: "#e60012", text: "#ffffff" }, { name: "PDD", bg: "#e02e24", text: "#ffffff" },
-        { name: "JD.com", bg: "#e2231a", text: "#ffffff" }, { name: "KLA Corp", bg: "#000000", text: "#ffffff" }, { name: "STMicro", bg: "#003b7a", text: "#ffffff" }, { name: "Infineon", bg: "#ed1c24", text: "#ffffff" }, { name: "ARM", bg: "#0091bd", text: "#ffffff" }, { name: "MediaTek", bg: "#f37021", text: "#ffffff" }, { name: "SK Hynix", bg: "#e51212", text: "#ffffff" }, { name: "Murata", bg: "#cc0000", text: "#ffffff" }, { name: "Renesas", bg: "#005193", text: "#ffffff" }, { name: "Advantest", bg: "#000000", text: "#ffffff" },
-        { name: "Lasertec", bg: "#003399", text: "#ffffff" }, { name: "Foxconn", bg: "#00479d", text: "#ffffff" }, { name: "Dell", bg: "#0076ce", text: "#ffffff" }, { name: "HP", bg: "#0096d6", text: "#ffffff" }, { name: "HPE", bg: "#00B388", text: "#ffffff" }, { name: "Lenovo", bg: "#e1131a", text: "#ffffff" }, { name: "Xiaomi", bg: "#ff6900", text: "#ffffff" }, { name: "Panasonic", bg: "#00438b", text: "#ffffff" }, { name: "Hitachi", bg: "#e60027", text: "#ffffff" }, { name: "Fujitsu", bg: "#ff0000", text: "#ffffff" },
-        { name: "NEC", bg: "#1414a0", text: "#ffffff" }, { name: "Toshiba", bg: "#ff0000", text: "#ffffff" }, { name: "Canon", bg: "#bf0000", text: "#ffffff" }, { name: "Ricoh", bg: "#cf142b", text: "#ffffff" }, { name: "Kyocera", bg: "#d00000", text: "#ffffff" }, { name: "Siemens", bg: "#009999", text: "#ffffff" }, { name: "Philips", bg: "#0b5ed7", text: "#ffffff" }, { name: "Ericsson", bg: "#002561", text: "#ffffff" }, { name: "Nokia", bg: "#124191", text: "#ffffff" }, { name: "Capgemini", bg: "#0070ad", text: "#ffffff" },
-        { name: "Atos", bg: "#0055a5", text: "#ffffff" }, { name: "Dassault", bg: "#0055a5", text: "#ffffff" }, { name: "Hexagon", bg: "#000000", text: "#ffffff" }, { name: "Amadeus", bg: "#0055a5", text: "#ffffff" }, { name: "VMware", bg: "#717074", text: "#ffffff" }, { name: "Arista", bg: "#000000", text: "#ffffff" }, { name: "CrowdStrike", bg: "#fc0000", text: "#ffffff" }, { name: "Datadog", bg: "#632ca6", text: "#ffffff" }, { name: "Cloudflare", bg: "#f38020", text: "#ffffff" }, { name: "Fortinet", bg: "#e0151d", text: "#ffffff" },
-        { name: "Palantir", bg: "#101113", text: "#ffffff" }, { name: "Splunk", bg: "#000000", text: "#ff0080" }, { name: "Zoom", bg: "#0b5cff", text: "#ffffff" }, { name: "Twilio", bg: "#f22f46", text: "#ffffff" }, { name: "Hubspot", bg: "#ff7a59", text: "#ffffff" }, { name: "Shopify", bg: "#95bf47", text: "#ffffff" }, { name: "Atlassian", bg: "#0052cc", text: "#ffffff" }, { name: "Unity", bg: "#000000", text: "#ffffff" }, { name: "UiPath", bg: "#004fb0", text: "#ffffff" }, { name: "Cognizant", bg: "#000048", text: "#00b259" }
-    ];
-
     const energyBrands = [
         { name: "ExxonMobil", bg: "#ffffff", text: "#ff0000" }, { name: "Chevron", bg: "#0054a4", text: "#ffffff" }, { name: "Shell", bg: "#ffcc00", text: "#dd0000" }, { name: "BP", bg: "#009900", text: "#ffe600" }, { name: "Total", bg: "#ffffff", text: "#0055a5" }, { name: "Eni", bg: "#ffcc00", text: "#000000" }, { name: "Conoco", bg: "#ffffff", text: "#000000" }, { name: "Occidental", bg: "#003399", text: "#ffffff" }, { name: "Marathon", bg: "#0054a4", text: "#ffffff" }, { name: "Valero", bg: "#009999", text: "#ffffff" },
         { name: "Phillips 66", bg: "#cc0000", text: "#ffffff" }, { name: "EOG", bg: "#006400", text: "#ffffff" }, { name: "Pioneer", bg: "#003399", text: "#ffffff" }, { name: "Hess", bg: "#006633", text: "#ffffff" }, { name: "Devon", bg: "#006699", text: "#ffffff" }, { name: "Diamondback", bg: "#ffcc00", text: "#000000" }, { name: "Coterra", bg: "#005530", text: "#ffffff" }, { name: "EQT", bg: "#009966", text: "#ffffff" }, { name: "Apache", bg: "#cc0000", text: "#ffffff" }, { name: "Baker Hughes", bg: "#005530", text: "#ffffff" },
@@ -185,6 +228,19 @@
         { name: "Reliance", bg: "#003399", text: "#ffffff" }, { name: "Bharat", bg: "#f1c40f", text: "#000000" }, { name: "Hindustan", bg: "#005b9f", text: "#ffffff" }, { name: "OIL India", bg: "#006400", text: "#ffffff" }, { name: "GAIL", bg: "#0055a5", text: "#ffffff" }, { name: "INPEX", bg: "#003399", text: "#ffffff" }, { name: "ENEOS", bg: "#e65100", text: "#ffffff" }, { name: "Idemitsu", bg: "#cc0000", text: "#ffffff" }, { name: "Cosmo", bg: "#e60012", text: "#ffffff" }, { name: "KNOC", bg: "#0055a5", text: "#ffffff" },
         { name: "SK Innov.", bg: "#e51212", text: "#ffffff" }, { name: "S-Oil", bg: "#f1c40f", text: "#006400" }, { name: "HD Hyundai", bg: "#002c5f", text: "#ffffff" }, { name: "CPC", bg: "#ed1c24", text: "#ffffff" }, { name: "Formosa", bg: "#003399", text: "#ffffff" }, { name: "Petronas", bg: "#00a19c", text: "#ffffff" }, { name: "PTT", bg: "#0055a5", text: "#ffffff" }, { name: "Pertamina", bg: "#ed1c24", text: "#ffffff" }, { name: "PVN", bg: "#ed1c24", text: "#ffd700" }, { name: "Petrolimex", bg: "#f36f21", text: "#ffffff" },
         { name: "Woodside", bg: "#0055a5", text: "#ffffff" }, { name: "Santos", bg: "#003399", text: "#ffffff" }, { name: "Keppel", bg: "#0055a5", text: "#ffffff" }, { name: "Medco", bg: "#003399", text: "#ffffff" }, { name: "Bangchak", bg: "#006633", text: "#ffffff" }, { name: "Petrobras", bg: "#008a3e", text: "#ffcd00" }, { name: "Pemex", bg: "#006633", text: "#ffffff" }, { name: "PDVSA", bg: "#ed1c24", text: "#ffffff" }, { name: "Ecopetrol", bg: "#2ecc71", text: "#000000" }, { name: "YPF", bg: "#0055a5", text: "#ffffff" }
+    ];
+
+    const techBrands = [
+        { name: "Microsoft", bg: "#00a4ef", text: "#ffffff" }, { name: "Apple", bg: "#f5f5f7", text: "#111111" }, { name: "NVIDIA", bg: "#76b900", text: "#000000" }, { name: "Google", bg: "#4285F4", text: "#ffffff" }, { name: "Amazon", bg: "#232F3E", text: "#FF9900" }, { name: "Meta", bg: "#0668E1", text: "#ffffff" }, { name: "TSMC", bg: "#cc0000", text: "#ffffff" }, { name: "Tesla", bg: "#e31937", text: "#ffffff" }, { name: "Broadcom", bg: "#cc0000", text: "#ffffff" }, { name: "ASML", bg: "#001a6e", text: "#ffffff" },
+        { name: "Samsung", bg: "#1428A0", text: "#ffffff" }, { name: "Tencent", bg: "#0052d9", text: "#ffffff" }, { name: "Oracle", bg: "#c74634", text: "#ffffff" }, { name: "AMD", bg: "#000000", text: "#ed1c24" }, { name: "Qualcomm", bg: "#3253ba", text: "#ffffff" }, { name: "Intel", bg: "#0068B5", text: "#ffffff" }, { name: "Adobe", bg: "#ff0000", text: "#ffffff" }, { name: "Salesforce", bg: "#00a1e0", text: "#ffffff" }, { name: "Cisco", bg: "#00bceb", text: "#000000" }, { name: "SAP", bg: "#008fd3", text: "#ffffff" },
+        { name: "Netflix", bg: "#E50914", text: "#ffffff" }, { name: "IBM", bg: "#0530ad", text: "#ffffff" }, { name: "Texas Inst.", bg: "#cc0000", text: "#ffffff" }, { name: "Alibaba", bg: "#FF6A00", text: "#ffffff" }, { name: "Sony", bg: "#000000", text: "#ffffff" }, { name: "Micron", bg: "#003359", text: "#ffffff" }, { name: "Applied Mat.", bg: "#005baa", text: "#ffffff" }, { name: "ServiceNow", bg: "#81b532", text: "#ffffff" }, { name: "Lam Res.", bg: "#00549f", text: "#ffffff" }, { name: "Tokyo Elec.", bg: "#0033a0", text: "#ffffff" },
+        { name: "Intuit", bg: "#0077c5", text: "#ffffff" }, { name: "Uber", bg: "#000000", text: "#ffffff" }, { name: "Synopsys", bg: "#512c75", text: "#ffffff" }, { name: "Cadence", bg: "#000000", text: "#ffffff" }, { name: "Analog Dev", bg: "#00528e", text: "#ffffff" }, { name: "Palo Alto", bg: "#f26622", text: "#ffffff" }, { name: "Schneider", bg: "#3dcd58", text: "#ffffff" }, { name: "Booking", bg: "#003580", text: "#ffffff" }, { name: "Keyence", bg: "#000000", text: "#ffffff" }, { name: "NXP", bg: "#f68b1f", text: "#ffffff" },
+        { name: "Marvell", bg: "#000000", text: "#ffffff" }, { name: "Workday", bg: "#005cb9", text: "#ffffff" }, { name: "Autodesk", bg: "#000000", text: "#ffffff" }, { name: "Snowflake", bg: "#29b5e8", text: "#ffffff" }, { name: "MercadoLibre", bg: "#ffe600", text: "#2d3277" }, { name: "Infosys", bg: "#007cc3", text: "#ffffff" }, { name: "Meituan", bg: "#ffc300", text: "#000000" }, { name: "Baidu", bg: "#2932e1", text: "#ffffff" }, { name: "NetEase", bg: "#e60012", text: "#ffffff" }, { name: "PDD", bg: "#e02e24", text: "#ffffff" },
+        { name: "JD.com", bg: "#e2231a", text: "#ffffff" }, { name: "KLA Corp", bg: "#000000", text: "#ffffff" }, { name: "STMicro", bg: "#003b7a", text: "#ffffff" }, { name: "Infineon", bg: "#ed1c24", text: "#ffffff" }, { name: "ARM", bg: "#0091bd", text: "#ffffff" }, { name: "MediaTek", bg: "#f37021", text: "#ffffff" }, { name: "SK Hynix", bg: "#e51212", text: "#ffffff" }, { name: "Murata", bg: "#cc0000", text: "#ffffff" }, { name: "Renesas", bg: "#005193", text: "#ffffff" }, { name: "Advantest", bg: "#000000", text: "#ffffff" },
+        { name: "Lasertec", bg: "#003399", text: "#ffffff" }, { name: "Foxconn", bg: "#00479d", text: "#ffffff" }, { name: "Dell", bg: "#0076ce", text: "#ffffff" }, { name: "HP", bg: "#0096d6", text: "#ffffff" }, { name: "HPE", bg: "#00B388", text: "#ffffff" }, { name: "Lenovo", bg: "#e1131a", text: "#ffffff" }, { name: "Xiaomi", bg: "#ff6900", text: "#ffffff" }, { name: "Panasonic", bg: "#00438b", text: "#ffffff" }, { name: "Hitachi", bg: "#e60027", text: "#ffffff" }, { name: "Fujitsu", bg: "#ff0000", text: "#ffffff" },
+        { name: "NEC", bg: "#1414a0", text: "#ffffff" }, { name: "Toshiba", bg: "#ff0000", text: "#ffffff" }, { name: "Canon", bg: "#bf0000", text: "#ffffff" }, { name: "Ricoh", bg: "#cf142b", text: "#ffffff" }, { name: "Kyocera", bg: "#d00000", text: "#ffffff" }, { name: "Siemens", bg: "#009999", text: "#ffffff" }, { name: "Philips", bg: "#0b5ed7", text: "#ffffff" }, { name: "Ericsson", bg: "#002561", text: "#ffffff" }, { name: "Nokia", bg: "#124191", text: "#ffffff" }, { name: "Capgemini", bg: "#0070ad", text: "#ffffff" },
+        { name: "Atos", bg: "#0055a5", text: "#ffffff" }, { name: "Dassault", bg: "#0055a5", text: "#ffffff" }, { name: "Hexagon", bg: "#000000", text: "#ffffff" }, { name: "Amadeus", bg: "#0055a5", text: "#ffffff" }, { name: "VMware", bg: "#717074", text: "#ffffff" }, { name: "Arista", bg: "#000000", text: "#ffffff" }, { name: "CrowdStrike", bg: "#fc0000", text: "#ffffff" }, { name: "Datadog", bg: "#632ca6", text: "#ffffff" }, { name: "Cloudflare", bg: "#f38020", text: "#ffffff" }, { name: "Fortinet", bg: "#e0151d", text: "#ffffff" },
+        { name: "Palantir", bg: "#101113", text: "#ffffff" }, { name: "Splunk", bg: "#000000", text: "#ff0080" }, { name: "Zoom", bg: "#0b5cff", text: "#ffffff" }, { name: "Twilio", bg: "#f22f46", text: "#ffffff" }, { name: "Hubspot", bg: "#ff7a59", text: "#ffffff" }, { name: "Shopify", bg: "#95bf47", text: "#ffffff" }, { name: "Atlassian", bg: "#0052cc", text: "#ffffff" }, { name: "Unity", bg: "#000000", text: "#ffffff" }, { name: "UiPath", bg: "#004fb0", text: "#ffffff" }, { name: "Cognizant", bg: "#000048", text: "#00b259" }
     ];
 
     const metalBrands = [
@@ -200,19 +256,18 @@
         { name: "Shandong", bg: "#cc0000", text: "#ffcc00" }, { name: "China Gold", bg: "#cc0000", text: "#ffd700" }, { name: "Zhongjin", bg: "#111111", text: "#ffcc00" }, { name: "Hunan Gold", bg: "#1a1a1a", text: "#f1c40f" }, { name: "Chifeng", bg: "#222222", text: "#e5c158" }, { name: "Sumitomo", bg: "#000000", text: "#c0c0c0" }, { name: "Mitsubishi", bg: "#2c3e50", text: "#c0c0c0" }, { name: "Tanaka", bg: "#1e1e1e", text: "#e5e4e2" }, { name: "Heraeus", bg: "#0a0a0a", text: "#e5e4e2" }, { name: "Valcambi", bg: "#111111", text: "#f39c12" }
     ];
 
-    let state = JSON.parse(localStorage.getItem("trainSave1260q")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
-    const save = () => localStorage.setItem("trainSave1260q", JSON.stringify(state));
+    const allBrands = [...logisticsBrands, ...energyBrands, ...techBrands, ...metalBrands];
+
+    let state = JSON.parse(localStorage.getItem("trainSave25637600q_opt")) || { elapsedSeconds: 0, wheelAngle: 0, distanceTraveled: 0, realDistanceKm: 0, spentDistanceKm: 0, currentRPM: 1, growthRate: BASE_GROWTH_RATE, lastEvenMilestone: 0, locomotives: 1, boughtGrowth: 0, running: false, lastJoint: 0, totalRotation: 0, lastChugStep: 0 };
+    const save = () => localStorage.setItem("trainSave25637600q_opt", JSON.stringify(state));
 
     if (state.realDistanceKm === undefined) state.realDistanceKm = 0; if (state.spentDistanceKm === undefined) state.spentDistanceKm = 0; if (state.locomotives === undefined) state.locomotives = 1; if (state.boughtGrowth === undefined) state.boughtGrowth = 0; if (state.lastEvenMilestone === undefined) state.lastEvenMilestone = 0; if (state.lastJoint === undefined) state.lastJoint = 0; if (state.totalRotation === undefined) state.totalRotation = 0; if (state.lastChugStep === undefined) state.lastChugStep = 0;
     if (state.currentRPM === undefined) state.currentRPM = Math.pow(1 + BASE_GROWTH_RATE, state.elapsedSeconds / DAY_IN_SECONDS);
-    
-    // Tốc độ mua tay +1% (0.01), Thưởng milestone +0.5% (0.005)
     if (state.growthRate === undefined) state.growthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01) + (state.lastEvenMilestone * 0.005);
 
     let timeMultiplier = 1; let lastTime = null; let currentRPM = state.currentRPM; let currentSpeedKmh = currentRPM / 6.3;
     let cameraMode = 1; 
     
-    // TỌA ĐỘ VỊ TRÍ CAMERA BIGINT CHỐNG TRÀN BỘ NHỚ
     let virtualCameraCar = -BigInt(state.locomotives); 
     let virtualCameraPixel = 0; 
     let droneCar = -BigInt(state.locomotives); 
@@ -368,7 +423,7 @@
         ctx.fillStyle = "#c0392b"; ctx.fillRect(10, y + h/2 + 20, w, 15); ctx.fillStyle = "#fff"; ctx.font = "bold 32px monospace"; ctx.textAlign = "center"; ctx.fillText("STEAM TENDER • HEAVY COAL SUPPLY", width/2, y + h/2 - 10);
     }
 
-    function drawGenericPlatinumContainer(ctx, width, idxBig, brandArray, titleStr) {
+    function drawSpecificPlatinumContainer(ctx, width, absoluteCorpIdx, brand, titleStr) {
         let w = width - 20; let y = -35;
         ctx.fillStyle = "#1a252f"; 
         ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(10, y, w, 20, 5); ctx.fill(); } else { ctx.fillRect(10, y, w, 20); }
@@ -380,9 +435,6 @@
 
         const CONT_HEIGHT_LOCAL = 270; const cy = y - CONT_HEIGHT_LOCAL; 
         
-        let brandIdx = Number(idxBig % BigInt(brandArray.length));
-        let brand = brandArray[brandIdx];
-
         let platGrad = ctx.createLinearGradient(0, cy, 0, cy + CONT_HEIGHT_LOCAL);
         platGrad.addColorStop(0, "#e5e4e2"); platGrad.addColorStop(0.3, "#ffffff"); platGrad.addColorStop(0.5, "#d3d3d3"); platGrad.addColorStop(0.8, "#f8f9fa"); platGrad.addColorStop(1, "#b0c4de");
         
@@ -414,10 +466,10 @@
         if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
         ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         
-        ctx.fillText(`500ft SOLID PLATINUM ${titleStr} (${brand.name.toUpperCase()}) • 145,000T • #${formatBigInt(idxBig + 1n)}`, width/2, y - 25);
+        ctx.fillText(`500ft SOLID PLATINUM ${titleStr} (${brand.name.toUpperCase()}) • 145,000T • #${formatBigInt(absoluteCorpIdx + 1n)}`, width/2, y - 25);
     }
 
-    function drawKyYeuPlatinumContainer(ctx, width, idxBig) {
+    function drawKyYeuPlatinumContainer(ctx, width, idxBig, isFront = false) {
         let w = width - 20; let y = -35;
         
         ctx.fillStyle = "#1a252f"; 
@@ -484,7 +536,8 @@
         ctx.beginPath(); ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
         if(ctx.roundRect) { ctx.roundRect(width/2 - 600, y - 45, 1200, 40, 8); ctx.fill(); } else { ctx.fillRect(width/2 - 600, y - 45, 1200, 40); }
         ctx.fillStyle = "#fff"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(`500ft SOLID PLATINUM MEMORY CAR (16:9 NO CROP) • 145,000T • #${formatBigInt(idxBig + 1n)}`, width/2, y - 25);
+        let blockName = isFront ? "FRONT VIP MEMORY CAR" : "MEMORY CAR";
+        ctx.fillText(`500ft SOLID PLATINUM ${blockName} (16:9 NO CROP) • 145,000T • #${formatBigInt(idxBig + 1n)}`, width/2, y - 25);
     }
 
     function drawCar(x, y, indexBig) {
@@ -497,23 +550,28 @@
         if (indexBig === 0n) {
             drawTender(ctx, CAR_WIDTH);
         } else {
-            let logicalIndexBig = indexBig - 1n; 
-            if (logicalIndexBig < QTY_OTHER_BIG) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig, logisticsBrands, "LOGISTICS");
-            } else if (logicalIndexBig < QTY_OTHER_BIG * 2n) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - QTY_OTHER_BIG, techBrands, "TECH GIANTS");
-            } else if (logicalIndexBig < QTY_OTHER_BIG * 3n) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 2n), energyBrands, "ENERGY");
-            } else if (logicalIndexBig < QTY_OTHER_BIG * 4n) {
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 3n), metalBrands, "PRECIOUS METALS & MINING");
-            } else if (logicalIndexBig < QTY_OTHER_BIG * 5n) {
-                let blankBrand = { name: "999.9 FINE PLATINUM", bg: "#1a1a1a", text: "#f1c40f" };
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 4n), [blankBrand], "PURE PLATINUM");
-            } else if (logicalIndexBig < QTY_OTHER_BIG * 6n) {
-                let matsonBrand = { name: "MATSON", bg: "#005b9f", text: "#ffffff" };
-                drawGenericPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 5n), [matsonBrand], "MATSON EXCLUSIVE");
+            let currentIdx = indexBig - 1n; // Trừ đi toa Tender
+            
+            if (currentIdx < QTY_KYYEU_FRONT_BIG) {
+                drawKyYeuPlatinumContainer(ctx, CAR_WIDTH, currentIdx, true);
             } else {
-                drawKyYeuPlatinumContainer(ctx, CAR_WIDTH, logicalIndexBig - (QTY_OTHER_BIG * 6n));
+                currentIdx -= QTY_KYYEU_FRONT_BIG; 
+                
+                if (currentIdx < TOTAL_CORP_CARS) {
+                    let brandIndex = Number(currentIdx / QTY_PER_BRAND);
+                    let brand = allBrands[brandIndex]; // allBrands giờ đã đủ 400 phần tử, index an toàn 0->399
+                    
+                    let categoryStr = "";
+                    if (brandIndex < 100) categoryStr = "LOGISTICS";
+                    else if (brandIndex < 200) categoryStr = "ENERGY";
+                    else if (brandIndex < 300) categoryStr = "TECH GIANTS";
+                    else categoryStr = "PRECIOUS METALS";
+
+                    drawSpecificPlatinumContainer(ctx, CAR_WIDTH, currentIdx, brand, categoryStr);
+                } else {
+                    currentIdx -= TOTAL_CORP_CARS;
+                    drawKyYeuPlatinumContainer(ctx, CAR_WIDTH, currentIdx, false);
+                }
             }
         }
 
@@ -775,11 +833,10 @@
 
         if (state.running) {
             const dt = realDt * timeMultiplier; state.elapsedSeconds += dt;
-            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01); // Mua tay +1%
+            const currentBaseGrowthRate = BASE_GROWTH_RATE + (state.boughtGrowth * 0.01); 
             let currentMilestone = Math.floor((Math.log10(Math.max(1, currentRPM)) + 1e-9) / 2); if (!isFinite(currentMilestone)) currentMilestone = state.lastEvenMilestone;
             if (currentMilestone > state.lastEvenMilestone) { state.lastEvenMilestone = currentMilestone; }
 
-            // Thưởng milestone tự động +0.5%
             state.growthRate = currentBaseGrowthRate + (state.lastEvenMilestone * 0.005); if (!isFinite(state.growthRate)) state.growthRate = 1e300;
             state.currentRPM *= Math.pow(1 + state.growthRate, dt / DAY_IN_SECONDS); if (!isFinite(state.currentRPM)) state.currentRPM = 1e300; currentRPM = state.currentRPM;
 
@@ -832,7 +889,7 @@
             trainPositionSlider.value = 0;
             return;
         }
-        let ratioNum = Number((currentCarAll * 1000000n) / totalCarsAll) / 1000000;
+        let ratioNum = Number((currentCarAll * 1000000000000000000n) / totalCarsAll) / 1000000000000000000;
         trainPositionSlider.value = Math.max(0, Math.min(1, ratioNum));
     }
 
@@ -910,8 +967,8 @@
         if (cameraMode !== 2) { cameraMode = 2; updateCameraButtons(); } 
         let val = parseFloat(e.target.value); 
         let totalCarsAll = TOTAL_CARS_BIG + BigInt(state.locomotives);
-        let valScaled = BigInt(Math.floor(val * 1000000000)); 
-        let targetCarAll = (totalCarsAll * valScaled) / 1000000000n;
+        let valScaled = BigInt(Math.floor(val * 1000000000000000000)); 
+        let targetCarAll = (totalCarsAll * valScaled) / 1000000000000000000n;
         
         virtualCameraCar = targetCarAll - BigInt(state.locomotives);
         virtualCameraPixel = 0;
